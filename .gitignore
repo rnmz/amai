@@ -1,0 +1,8 @@
+.idea
+.DS_Store
+Build
+.env
+./.env
+.vs_code
+test
+frontend
