@@ -44,11 +44,13 @@ func PostGetById(c *gin.Context) {
 	queryId := c.Query("id")
 	if queryId == "" {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "query id not set"})
+		return
 	}
 
 	id, parseErr := uuid.Parse(queryId)
 	if parseErr != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "invalid UUID format"})
+		return 
 	}
 
 	rawPost, dataErr := data.GetPostById(db, c.Request.Context(), id)
@@ -166,11 +168,13 @@ func PostDelete(c *gin.Context) {
 	queryId := c.Query("id")
 	if queryId == "" {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "query id not set"})
+		return
 	}
 
 	id, parseErr := uuid.Parse(queryId)
 	if parseErr != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "invalid UUID format"})
+		return
 	}
 
 	err := data.DeletePost(db, c.Request.Context(), id)

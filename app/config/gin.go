@@ -48,7 +48,7 @@ func GinApp(db *sqlx.DB) *gin.Engine {
 	return router
 }
 
-func ginCustomRecovery(c *gin.Context, recovered interface{}) {
+func ginCustomRecovery(c *gin.Context, recovered any) {
 	args := []any{
 		"Panic: ", recovered,
 		"Ip", c.ClientIP(),
