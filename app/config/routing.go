@@ -14,7 +14,7 @@ func Routing(e *gin.Engine) {
 		user.GET("/post/all", func(ctx *gin.Context) { handler.PostGetAll(ctx) })
 		user.GET("/file/get", func(ctx *gin.Context) { handler.FileGet(ctx) })
 
-		user.GET("/health", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"status": "alive"}) })
+		user.GET("/health", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"message": "alive"}) })
 	}
 
 	admin := e.Group("/admin/")

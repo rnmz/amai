@@ -12,15 +12,15 @@ import (
 )
 
 type FileEntity struct {
-	FileId  uuid.UUID
-	FileExt string
+	FileId  uuid.UUID `db:"file_id"`
+	FileExt string    `db:"file_ext"`
 }
 
 func GetFileById(db *sqlx.DB, ctx context.Context, id uuid.UUID) (string, error) {
 	path := os.Getenv("FILE_PATH")
 	var fileInfo FileEntity
 
-	db.GetContext(ctx, &fileInfo, "SELECT * FROM files WHERE FileId = $1", id.String())
+	db.GetContext(ctx, &fileInfo, "SELECT * FROM files WHERE file_id = $1", id.String())
 
 	file := filepath.Clean(filepath.Join(path, fileInfo.FileId.String()+fileInfo.FileExt))
 
@@ -50,7 +50,7 @@ func UploadFile(db *sqlx.DB, file io.Reader, ext string) (string, error) {
 	}
 
 	_, dbErr := db.NamedExec(
-		`INSERT INTO files (FileId, FileExt) VALUES (:FileId, :FileExt)`,
+		`INSERT INTO files (file_id, file_ext) VALUES (:FileId, :FileExt)`,
 		map[string]string{
 			"FileId":  generatedFileName,
 			"FileExt": ext,
@@ -69,7 +69,7 @@ func DeleteFile(db *sqlx.DB, ctx context.Context, id uuid.UUID) error {
 	tx, txErr := db.BeginTxx(ctx, nil)
 	var fileInfo FileEntity
 
-	db.Select(&fileInfo, "SELECT * FROM files WHERE FileId = $1", id)
+	db.Select(&fileInfo, "SELECT * FROM files WHERE file_id = $1", id)
 	file := filepath.Clean(filepath.Join(path, id.String()+fileInfo.FileExt))
 
 	if txErr != nil {
@@ -77,7 +77,7 @@ func DeleteFile(db *sqlx.DB, ctx context.Context, id uuid.UUID) error {
 	}
 	defer tx.Rollback()
 
-	res, execErr := tx.Exec("DELETE FROM files WHERE FileId = $1", id)
+	res, execErr := tx.Exec("DELETE FROM files WHERE file_id = $1", id)
 	if execErr != nil {
 		return execErr
 	}
