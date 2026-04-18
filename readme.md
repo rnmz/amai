@@ -35,5 +35,4 @@ See full gallery [**here**](./readme/gallery)
 <p align="center">
     <img src="./readme/gallery/about.png">
     <img src="./readme/gallery/articles.png">
-    <img src="./readme/gallery/articles-dark.png">
 </p>
