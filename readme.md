@@ -1,6 +1,6 @@
 # 🌸 Amai
 
-**A lightweight, minimalist blog engine designed for simplicity.** Amai allows you to transform Markdown files into a sleek, functional blog with high-fidelity parsing and a modern tech stack.
+**A lightweight, minimalist blog designed for simplicity.**
 
 [**View Gallery**](./readme/gallery) | [**Report Bug**](https://github.com/rnmz/amai/issues)
 
@@ -68,5 +68,11 @@ We currently support the following languages:
     ```bash
     go mod tidy
     ```
-3.  **Configure your database**
-    Update your `.env` or configuration file with your PostgreSQL credentials.
+3. **Configure your server**
+   
+   Create a `.env` file based on `.env.example`
+   ```bash
+   cp .env.example .env
+   ```
+
+   Note: All variables are required for the server to start correctly!
