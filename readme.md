@@ -62,7 +62,7 @@ We currently support the following languages:
 
 1.  **Clone the repo**
     ```bash
-    git clone https://github.com/yourusername/amai.git
+    git clone https://github.com/rnmz/amai.git
     ```
 2.  **Install dependencies**
     ```bash
