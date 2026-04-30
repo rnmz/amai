@@ -39,7 +39,7 @@ func CheckEnvParams() error {
 }
 
 func ShowStartMessage() {
-	fmt.Printf("Server started at %s. Start time: %s", os.Getenv("BACKEND_PORT"), time.Now().String())
+	fmt.Printf("Server started at %s. Start time: %s\n", os.Getenv("BACKEND_PORT"), time.Now().String())
 }
 
 func StartServer() {

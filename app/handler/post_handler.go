@@ -2,7 +2,6 @@ package handler
 
 import (
 	"amai/blog/app/data"
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -85,7 +84,6 @@ func PostGetAll(c *gin.Context) {
 
 	pages, pagesErr := data.GetAllPages(db, c.Request.Context())
 	if pagesErr != nil {
-		fmt.Printf("something went wrong %s", pagesErr.Error())
 		c.Error(pagesErr)
 		c.Abort()
 		return
