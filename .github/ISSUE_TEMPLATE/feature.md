@@ -1,6 +1,6 @@
 ---
-name: Custom issue template
-about: Describe this issue template's purpose here.
+name: Feature
+about: Wanna add a new feature? Just describe it!
 title: "[Feature] "
 labels: enhancement
 assignees: rnmz
