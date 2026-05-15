@@ -7,10 +7,12 @@ import (
 	"net/http"
 	"os"
 	"runtime/debug"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
+	"golang.org/x/time/rate"
 )
 
 func GinApp(db *sqlx.DB) *gin.Engine {
@@ -28,6 +30,7 @@ func GinApp(db *sqlx.DB) *gin.Engine {
 	router.Use(gin.CustomRecovery(ginCustomRecovery))
 	router.Use(errorHandler())
 	router.Use(injectSqlx(db))
+	router.Use(rateLimit())
 
 	trustedProxyIpV4 := os.Getenv("TRUSTED_PROXY_IPV4")
 	trustedProxyIpV6 := os.Getenv("TRUSTED_PROXY_IPV6")
@@ -102,4 +105,32 @@ func authMiddleware() gin.HandlerFunc {
 		}
 		c.Next()
 	}
+}
+
+func rateLimit() gin.HandlerFunc {
+	type client struct {
+		limiter *rate.Limiter
+	}
+
+	var (
+		mut     sync.Mutex
+		clients = make(map[string]*client)
+	)
+
+	return func(ctx *gin.Context) {
+		ip := ctx.ClientIP()
+		mut.Lock()
+		if _, exists := clients[ip]; !exists {
+			clients[ip] = &client{limiter: rate.NewLimiter(5, 5)}
+		}
+		cl := clients[ip]
+		mut.Unlock()
+
+		if !cl.limiter.Allow() {
+			ctx.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"message": "rate limit exceeded. 5 req/sec only"})
+			return
+		}
+		ctx.Next()
+	}
+
 }
