@@ -14,7 +14,7 @@ A clear and concise description of what the bug is.
 Steps to reproduce the behavior:
 1. Go to '...'
 2. Click on '....'
-3. 3. See error in (dev) console
+3. See error in (dev) console
 
 **Expected behavior**
 A clear and concise description of what you expected to happen.
