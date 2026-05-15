@@ -56,6 +56,12 @@ We currently support the following languages:
 
 -----
 
+# Roadmap
+- Add more themes
+- Setup panel (TUI & WebGUI)
+  
+-----
+
 ### 🚀 Getting Started
 
 > **Note:** The frontend implementation is currently in progress. Stay tuned for the full release!
