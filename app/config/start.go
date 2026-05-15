@@ -1,6 +1,7 @@
 package app
 
 import (
+	"amai/blog/app/auth"
 	"context"
 	"fmt"
 	"log/slog"
@@ -67,7 +68,7 @@ func StartServer() {
 		for {
 			select {
 			case <-cleanupTicker.C:
-				CleanupSessions()
+				auth.CleanupSessions()
 			case <-cleanupDone:
 				return
 			}

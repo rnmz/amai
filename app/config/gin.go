@@ -1,33 +1,25 @@
 package app
 
 import (
-	"crypto/rand"
-	"crypto/subtle"
-	"encoding/base64"
+	"amai/blog/app/auth"
 	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"runtime/debug"
-	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
 )
 
-type sessionStruct struct {
-	User     string
-	Created  time.Time
-	Expires  time.Time
-	LastSeen time.Time
-}
-
-var sessions sync.Map
-var sessionTTL = 24 * time.Hour
-
 func GinApp(db *sqlx.DB) *gin.Engine {
-	gin.SetMode(gin.ReleaseMode)
+	if os.Getenv("GIN_MODE") == "release" {
+		gin.SetMode(gin.ReleaseMode)
+	} else {
+		gin.SetMode(gin.DebugMode)
+	}
+
 	router := gin.New()
 
 	router.MaxMultipartMemory = 16 << 20 // 16 MiB
@@ -101,93 +93,13 @@ func injectSqlx(db *sqlx.DB) gin.HandlerFunc {
 
 func authMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if handleCookieAuth(c) || handleAuth(c) {
-			c.Next()
+		err := auth.CheckCookieAuth(c)
+		if err != nil {
+			c.Header("WWW-Authenticate", `Basic realm="Authorization Required"`)
+			c.AbortWithStatus(http.StatusUnauthorized)
+			time.Sleep(500 * time.Millisecond)
 			return
 		}
-		c.Header("WWW-Authenticate", `Basic realm="Authorization Required"`)
-		c.AbortWithStatus(http.StatusUnauthorized)
-		time.Sleep(500 * time.Millisecond)
+		c.Next()
 	}
-}
-
-func handleCookieAuth(c *gin.Context) bool {
-	sessionId, err := c.Cookie("sessionId")
-
-	if err != nil || sessionId == "" {
-		return false
-	}
-
-	val, exists := sessions.Load(sessionId)
-	if !exists {
-		return false
-	}
-
-	session := val.(sessionStruct)
-
-	if time.Now().After(session.Expires) {
-		sessions.Delete(sessionId)
-		return false
-	}
-
-	session.LastSeen = time.Now()
-	session.Expires = time.Now().Add(24 * time.Hour)
-	sessions.Store(sessionId, session)
-
-	http.SetCookie(c.Writer, &http.Cookie{
-		Name:     "sessionId",
-		Value:    sessionId,
-		Path:     "/",
-		MaxAge:   int(sessionTTL.Seconds()),
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteLaxMode,
-	})
-	return true
-}
-
-func handleAuth(c *gin.Context) bool {
-	user, pass, hasAuth := c.Request.BasicAuth()
-	if !hasAuth {
-		return false
-	}
-
-	validUser := os.Getenv("admin_login")
-	validPass := os.Getenv("admin_password")
-	if validUser == "" || validPass == "" {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
-		return false
-	}
-
-	userValid := subtle.ConstantTimeCompare([]byte(user), []byte(validUser)) == 1
-	passValid := subtle.ConstantTimeCompare([]byte(pass), []byte(validPass)) == 1
-	if !userValid || !passValid {
-		return false
-	}
-
-	sessionId := generateSessionID()
-	sessions.Store(sessionId, sessionStruct{
-		User:     user,
-		Created:  time.Now(),
-		Expires:  time.Now().Add(sessionTTL),
-		LastSeen: time.Now(),
-	})
-	c.SetCookie("sessionId", sessionId, int(sessionTTL.Seconds()), "/", "", true, true)
-	return true
-}
-
-func CleanupSessions() {
-	sessions.Range(func(key, value any) bool {
-		session := value.(sessionStruct)
-		if time.Now().After(session.Expires) {
-			sessions.Delete(key)
-		}
-		return true
-	})
-}
-
-func generateSessionID() string {
-	b := make([]byte, 32)
-	_, _ = rand.Read(b)
-	return base64.URLEncoding.EncodeToString(b)
 }
