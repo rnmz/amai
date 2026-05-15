@@ -14,8 +14,7 @@ A clear and concise description of what the bug is.
 Steps to reproduce the behavior:
 1. Go to '...'
 2. Click on '....'
-3. Scroll down to '....'
-4. See error
+3. 3. See error in (dev) console
 
 **Expected behavior**
 A clear and concise description of what you expected to happen.
@@ -24,7 +23,7 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 **Server (please complete the following information):**
- - OS: [e.g. iOS]
+ - OS: [e.g. Ubuntu linux]
  - Blog version [e.g. 22]
 
 **Additional context**
