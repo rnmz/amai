@@ -40,7 +40,24 @@ func CheckEnvParams() error {
 }
 
 func ShowStartMessage() {
-	fmt.Printf("Server started at %s. Start time: %s\n", os.Getenv("BACKEND_PORT"), time.Now().String())
+	banner := `
+    ╔═══════════════════════════════════════════════════════════╗
+    ║                                                           ║
+    ║      █████╗ ███╗   ███╗ █████╗ ██╗                        ║
+    ║     ██╔══██╗████╗ ████║██╔══██╗██║                        ║
+    ║     ███████║██╔████╔██║███████║██║                        ║
+    ║     ██╔══██║██║╚██╔╝██║██╔══██║██║                        ║
+    ║     ██║  ██║██║ ╚═╝ ██║██║  ██║██║                        ║
+    ║     ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝╚═╝                        ║
+    ║                                                           ║
+    ║     ✨ Your own blog ✨                                  ║
+    ║     ⚡ High Performance | 🚀 Easy to start | 🔒 Secure   ║
+    ║                                                           ║
+    ╚═══════════════════════════════════════════════════════════╝
+    `
+	fmt.Print(banner)
+	version := "ALPHA V1.0"
+	fmt.Printf("Server started at %s, version: %s. Start time: %s\n", os.Getenv("BACKEND_PORT"), version, time.Now().String())
 }
 
 func StartServer() {
