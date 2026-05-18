@@ -55,9 +55,17 @@ func ShowStartMessage() {
     ║                                                           ║
     ╚═══════════════════════════════════════════════════════════╝
     `
-	fmt.Print(banner)
+	fmt.Println(banner)
 	version := "ALPHA V1.0"
-	fmt.Printf("Server started at %s, version: %s. Start time: %s\n", os.Getenv("BACKEND_PORT"), version, time.Now().String())
+	start := `
+    ╔═══════════════════════════════════════════════════════════╗
+    ║  Server started 🚀                                        ║
+    ║  Amai version: %s                                         ║
+    ║  Port: %s                                                 ║
+	║  Start time: %s                                           ║
+    ╚═══════════════════════════════════════════════════════════╝
+	`
+	fmt.Printf(start, version, os.Getenv("BACKEND_PORT"), time.Now().String())
 }
 
 func StartServer() {
