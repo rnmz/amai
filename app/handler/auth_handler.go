@@ -15,7 +15,7 @@ func AuthLogin(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	c.JSON(http.StatusAccepted, gin.H{"message": "login!"})
+	c.JSON(http.StatusAccepted, gin.H{"message": "login"})
 }
 
 func AuthLogout(c *gin.Context) {
@@ -26,5 +26,5 @@ func AuthLogout(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	c.JSON(http.StatusAccepted, gin.H{"message": "logout!"})
+	c.JSON(http.StatusAccepted, gin.H{"message": "logout"})
 }
