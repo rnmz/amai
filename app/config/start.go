@@ -30,7 +30,6 @@ func CheckEnvParams() error {
 		"FILE_PATH",
 		"DSN",
 	}
-
 	for _, v := range vars {
 		if os.Getenv(v) == "" {
 			return fmt.Errorf("environment variable %s is not set", v)
