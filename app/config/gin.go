@@ -2,7 +2,6 @@ package app
 
 import (
 	"amai/blog/app/auth"
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -63,25 +62,11 @@ func ginCustomRecovery(c *gin.Context, recovered any) {
 // Middleware
 func errorHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		defer func() {
-			if r := recover(); r != nil {
-				c.Error(errors.New("panic recovered"))
-
-				if !c.Writer.Written() {
-					c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-					return
-				}
-
-				c.Abort()
-			}
-		}()
-
 		c.Next()
-
 		if len(c.Errors) > 0 {
 			if !c.Writer.Written() {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-				return
+				lastErr := c.Errors.Last()
+				c.JSON(http.StatusInternalServerError, gin.H{"error": lastErr.Error()})
 			}
 		}
 	}
