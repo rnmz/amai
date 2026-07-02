@@ -21,9 +21,9 @@ Amai is built using a robust and modern set of tools:
 | Component | Technology |
 | :--- | :--- |
 | **Backend Framework** | [Gin Gonic](https://gin-gonic.com/) |
-| **Database Driver** | [lib/pq](https://github.com/lib/pq) |
-| **SQL Toolkit** | [sqlx](https://github.com/jmoiron/sqlx) |
-| **Frontend Framework** | [Astro](https://astro.build/) |
+| **Database Driver** | [lib/pq](https://github.com/lib/pq/) |
+| **SQL Toolkit** | [sqlx](https://github.com/jmoiron/sqlx/) |
+| **Frontend Framework** | [Vue](https://vuejs.org/) |
 | **Markdown Parser** | [Marked.js](https://marked.js.org/) |
 
 -----

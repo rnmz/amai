@@ -30,6 +30,7 @@ func GinApp(db *sqlx.DB) *gin.Engine {
 	router.Use(errorHandler())
 	router.Use(injectSqlx(db))
 	router.Use(rateLimit())
+	router.Use(cors())
 
 	trustedProxyIpV4 := os.Getenv("TRUSTED_PROXY_IPV4")
 	trustedProxyIpV6 := os.Getenv("TRUSTED_PROXY_IPV6")
@@ -118,4 +119,19 @@ func rateLimit() gin.HandlerFunc {
 		ctx.Next()
 	}
 
+}
+
+func cors() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+
+		c.Next()
+	}
 }
