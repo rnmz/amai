@@ -5,6 +5,7 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"sync"
@@ -45,15 +46,18 @@ func CheckCookieAuth(c *gin.Context) error {
 	sessionId, err := c.Cookie("sessionId")
 
 	if err != nil {
+		slog.Warn("[Cookie] Cookie not found or invalid")
 		return &AuthError{ErrorType: AuthErrorCookieInvalid, ErrorMessage: "Cookie not found or invalid"}
 	}
 
 	if sessionId == "" {
+		slog.Warn("[Cookie] Empty session id")
 		return &AuthError{ErrorType: AuthErrorCookieInvalid, ErrorMessage: "Empty sessionId"}
 	}
 
 	val, exists := sessions.Load(sessionId)
 	if !exists {
+		slog.Warn("[Cookie] Session doesn't exists")
 		return &AuthError{ErrorType: AuthErrorCookieNotExists, ErrorMessage: "No found"}
 	}
 
@@ -61,7 +65,8 @@ func CheckCookieAuth(c *gin.Context) error {
 
 	if time.Now().After(session.Expires) {
 		sessions.Delete(sessionId)
-		return &AuthError{ErrorType: AuthErrorCookieExpired, ErrorMessage: "Message"}
+		slog.Warn("[Cookie] Session expired", "sessionId", sessionId)
+		return &AuthError{ErrorType: AuthErrorCookieExpired, ErrorMessage: "Expired"}
 	}
 
 	currTime := time.Now()
@@ -78,25 +83,28 @@ func CheckCookieAuth(c *gin.Context) error {
 		Secure:   true,
 		SameSite: http.SameSiteLaxMode,
 	})
+	slog.Info("[Cookie] Session cookie updated", "sessionId", sessionId)
 	return nil
 }
-
 func Login(c *gin.Context) error {
 	user, pass, ok := c.Request.BasicAuth()
 	if !ok {
-		return &AuthError{ErrorType: AuthErrorBasicAuthNotValid, ErrorMessage: "Something wrong with basic auth"}
+		slog.Warn("[Auth] Basic auth header missing or malformed")
+		return &AuthError{ErrorType: AuthErrorBasicAuthNotValid, ErrorMessage: "Invalid basic auth header"}
 	}
 
 	validUser := os.Getenv("admin_login")
 	validPass := os.Getenv("admin_password")
 	if validUser == "" || validPass == "" {
-		return &AuthError{ErrorType: AuthErrorAdminCredentialsInvalid, ErrorMessage: "Admin login or password not set"}
+		slog.Error("[Auth] Admin credentials are not set in environment variables")
+		return &AuthError{ErrorType: AuthErrorAdminCredentialsInvalid, ErrorMessage: "Internal server configuration error"}
 	}
 
 	userValid := subtle.ConstantTimeCompare([]byte(user), []byte(validUser)) == 1
 	passValid := subtle.ConstantTimeCompare([]byte(pass), []byte(validPass)) == 1
 	if !userValid || !passValid {
-		return &AuthError{ErrorType: AuthErrorBasicAuthNotValid, ErrorMessage: ""}
+		slog.Warn("[Auth] Invalid login credentials attempt", "username", user)
+		return &AuthError{ErrorType: AuthErrorBasicAuthNotValid, ErrorMessage: "Invalid username or password"}
 	}
 
 	sessionId := generateSessionID()
@@ -107,28 +115,33 @@ func Login(c *gin.Context) error {
 		Expires:  currTime.Add(sessionTTL),
 		LastSeen: currTime,
 	})
+
 	c.SetCookie("sessionId", sessionId, int(sessionTTL.Seconds()), "/", "", true, true)
+
+	slog.Info("[Auth] User logged in successfully", "username", user, "sessionId", sessionId)
 	return nil
 }
 
 func Logout(c *gin.Context) error {
 	sessionId, err := c.Cookie("sessionId")
-
 	if err != nil {
+		slog.Warn("[Cookie] Logout attempted without sessionId cookie")
 		return &AuthError{ErrorType: AuthErrorCookieNotExists}
 	}
 
 	if sessionId == "" {
+		slog.Warn("[Cookie] Logout attempted with empty sessionId cookie")
 		return &AuthError{ErrorType: AuthErrorCookieInvalid}
 	}
 
 	_, exists := sessions.Load(sessionId)
-
 	if !exists {
+		slog.Warn("[Session] Logout attempted for non-existent or expired session", "sessionId", sessionId)
 		return &AuthError{ErrorType: AuthErrorCookieNotExists}
 	}
 
 	sessions.Delete(sessionId)
+	slog.Info("[Session] User logged out successfully", "sessionId", sessionId)
 	return nil
 }
 
@@ -139,11 +152,20 @@ func generateSessionID() string {
 }
 
 func CleanupSessions() {
+	slog.Debug("[Session] Running background session cleanup")
+	deletedCount := 0
+
 	sessions.Range(func(key, value any) bool {
 		session := value.(sessionStruct)
 		if time.Now().After(session.Expires) {
 			sessions.Delete(key)
+			deletedCount++
+			slog.Debug("[Session] Expired session removed during cleanup", "sessionId", key)
 		}
 		return true
 	})
+
+	if deletedCount > 0 {
+		slog.Info("[Session] Background cleanup completed", "removedSessionsCount", deletedCount)
+	}
 }

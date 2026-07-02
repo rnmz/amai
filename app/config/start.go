@@ -1,4 +1,4 @@
-package app
+package config
 
 import (
 	"amai/blog/app/auth"
@@ -33,7 +33,7 @@ func CheckEnvParams() error {
 
 	for _, v := range vars {
 		if os.Getenv(v) == "" {
-			return fmt.Errorf("environment variable %s is not set", v)
+			return fmt.Errorf("Environment variable %s is not set", v)
 		}
 	}
 	return nil
@@ -51,7 +51,6 @@ func ShowStartMessage() {
     ║     ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝╚═╝                        ║
     ║                                                           ║
     ║     ✨ Your own blog ✨                                  ║
-    ║     ⚡ High Performance | 🚀 Easy to start | 🔒 Secure   ║
     ║                                                           ║
     ╚═══════════════════════════════════════════════════════════╝
     `
@@ -102,21 +101,21 @@ func StartServer() {
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {
-			slog.Error("ListenAndServe() error", "error msg", err)
+			slog.Error("[Gin] ListenAndServe() error", "error msg", err)
 		}
-		slog.Info("Server started")
+		slog.Info("[Gin] Server started")
 	}()
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-	slog.Info("Shutdown Server ...")
+	slog.Info("[Gin] Shutdown Server ...")
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		fmt.Printf("Server Shutdown error. Message %s", err.Error())
+		slog.Error("[Gin] Server Shutdown error.", "error", err)
 	}
 
 	cleanupDone <- true

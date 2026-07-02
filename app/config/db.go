@@ -1,7 +1,8 @@
-package app
+package config
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"sync"
 
@@ -18,6 +19,7 @@ func initSqlTables(db *sqlx.DB) {
 		file_ext TEXT NOT NULL
 	);
 	`); filesTableErr != nil {
+		slog.Error("[DB] Init table files failed", "error", filesTableErr)
 		panic(fmt.Errorf("init table files failed: %v", filesTableErr))
 	}
 
@@ -31,6 +33,7 @@ func initSqlTables(db *sqlx.DB) {
 		body    TEXT NOT NULL
 	);
 	`); postTableErr != nil {
+		slog.Error("[DB] Init table posts failed", "error", postTableErr)
 		panic(fmt.Errorf("init table posts failed: %v", postTableErr))
 	}
 
@@ -41,13 +44,14 @@ func InitDatabase() *sqlx.DB {
 	dsn := os.Getenv("DSN")
 	db, err := sqlx.Open("postgres", dsn)
 	if err != nil {
-		fmt.Printf("Error connecting to database. Message %s", err.Error())
+		slog.Error("[DB] Error connecting to database", "error", err)
+		return nil
 	}
 	db.SetMaxOpenConns(16)
 	db.SetMaxIdleConns(16)
 
 	if err := db.Ping(); err != nil {
-		fmt.Printf("Error pinging database. Message %s", err.Error())
+		slog.Error("[DB] Error pinging database", "error", err)
 		panic("database not available")
 	}
 
@@ -62,7 +66,7 @@ func CloseDatabase(db *sqlx.DB) {
 	closeOnce.Do(func() {
 		if db != nil {
 			if err := db.Close(); err != nil {
-				fmt.Printf("Error closing database: %s\n", err)
+				slog.Error("[DB] Error closing database", "error", err)
 			}
 		}
 	})

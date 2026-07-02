@@ -1,8 +1,8 @@
-package app
+package config
 
 import (
 	"amai/blog/app/auth"
-	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"runtime/debug"
@@ -37,7 +37,7 @@ func GinApp(db *sqlx.DB) *gin.Engine {
 	err := router.SetTrustedProxies([]string{trustedProxyIpV4, trustedProxyIpV6})
 
 	if err != nil {
-		fmt.Printf("SetTrustedProxies error. Message %s", err.Error())
+		slog.Error("SetTrustedProxies error", "error", err)
 	}
 
 	return router
@@ -57,6 +57,7 @@ func ginCustomRecovery(c *gin.Context, recovered any) {
 			"Stack", string(debug.Stack()),
 		)
 	}
+	slog.Error("[Gin] Panic recovered", "args", args)
 	c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
 }
 
@@ -67,7 +68,9 @@ func errorHandler() gin.HandlerFunc {
 		if len(c.Errors) > 0 {
 			if !c.Writer.Written() {
 				lastErr := c.Errors.Last()
-				c.JSON(http.StatusInternalServerError, gin.H{"error": lastErr.Error()})
+				slog.Error("[Gin] Error handled", "error", lastErr)
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
+				return
 			}
 		}
 	}
@@ -87,6 +90,7 @@ func authMiddleware() gin.HandlerFunc {
 			c.Header("WWW-Authenticate", `Basic realm="Authorization Required"`)
 			c.AbortWithStatus(http.StatusUnauthorized)
 			time.Sleep(500 * time.Millisecond)
+			slog.Info("[Gin] Auth required")
 			return
 		}
 		c.Next()
@@ -131,7 +135,6 @@ func cors() gin.HandlerFunc {
 			c.AbortWithStatus(204)
 			return
 		}
-
 		c.Next()
 	}
 }
