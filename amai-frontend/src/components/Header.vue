@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n';
+
+const { t, locale } = useI18n()
 
 const currentTheme = ref('light')
 
@@ -9,10 +12,11 @@ function changeTheme() {
   localStorage.setItem('user-theme', currentTheme.value)
 }
 
-const lang = ref('en')
+const lang = ref(localStorage.getItem('user-lang') || locale.value)
 
 function changeLanguage() {
-
+  locale.value = lang.value
+  localStorage.setItem('user-lang', lang.value)
 }
 
 onMounted(() => {
@@ -21,6 +25,12 @@ onMounted(() => {
     currentTheme.value = savedTheme
   }
   changeTheme()
+
+  const savedLanguage = localStorage.getItem('user-lang')
+  if (savedLanguage) {
+    lang.value = savedLanguage
+    locale.value = savedLanguage
+  }
 })
 
 </script>
@@ -41,16 +51,15 @@ onMounted(() => {
         <div class="settings-item">
           <label for="lang-select">language: </label>
           <select id="lang-select" v-model="lang" @change="changeLanguage()">
-            <option value="ru">Russian</option>
-            <option value="en">English</option>
-            <option value="jp">Japanese</option>
+            <option value="en-US">english</option> 
+            <option value="ru-RU">russian</option>
           </select>
         </div>
       </div>
       <nav>
-        <RouterLink to="/"><h3>main</h3></RouterLink>
-        <RouterLink to="/about"><h3>about</h3></RouterLink>
-        <RouterLink to="/articles"><h3>articles</h3></RouterLink>
+        <RouterLink to="/"><h3>{{ t('nav.main') }}</h3></RouterLink>
+        <RouterLink to="/about"><h3>{{ t('nav.about') }}</h3></RouterLink>
+        <RouterLink to="/articles"><h3>{{ t('nav.articles') }}</h3></RouterLink>
       </nav>
     </div>
   </header>

@@ -3,6 +3,6 @@
 Build
 .env
 ./.env
-.vs_code
+.vscode/*
 test
-frontend
+node_modules

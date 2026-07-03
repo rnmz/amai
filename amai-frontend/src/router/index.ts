@@ -22,6 +22,11 @@ const router = createRouter({
       meta: { isAdminPage: false }
     },
     {
+      path: '/article/:id',
+      name: 'article',
+      component: () => import("../views/user/ReadArticleView.vue")
+    },
+    {
       path: '/admin/articles',
       name: 'admin_articles',
       component: () => import('../views/admin/ArticlesView.vue'),

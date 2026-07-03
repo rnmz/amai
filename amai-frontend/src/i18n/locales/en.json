@@ -1,0 +1,13 @@
+{
+    "nav": {
+        "main": "main",
+        "about": "about",
+        "articles": "articles"
+    },
+    "main": {
+        "text": ""
+    },
+    "about": {
+        "text": ""
+    }
+}
