@@ -5,6 +5,8 @@ import i18n from '@/i18n/index.ts'
 import App from './App.vue'
 import router from './router'
 
+import './assets/markdown.css'
+
 const app = createApp(App)
 
 app.use(createPinia())

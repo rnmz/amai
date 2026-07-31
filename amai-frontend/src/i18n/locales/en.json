@@ -1,13 +1,22 @@
 {
-    "nav": {
-        "main": "main",
-        "about": "about",
-        "articles": "articles"
-    },
-    "main": {
-        "text": ""
-    },
-    "about": {
-        "text": ""
-    }
+  "nav": {
+    "main": "main",
+    "about": "about",
+    "articles": "articles"
+  },
+  "not_found": {
+    "title": "Page Not Found",
+    "text": "The requested page does not exist or has been moved."
+  },
+  "admin": {
+    "delete_article": "Delete Article",
+    "create_article": "Create Article",
+    "edit_article": "Edit Article",
+    "upload_file": "Upload New File",
+    "delete_file": "Delete File"
+  },
+  "hint": {
+    "write_text": "Write your article here",
+    "title": "Article Title"
+  }
 }

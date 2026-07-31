@@ -8,11 +8,12 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 )
 
 func InitLogger() (*os.File, error) {
 	logDir := "./log"
-	logPath := filepath.Join(logDir, "app.log")
+	logPath := filepath.Join(logDir, fmt.Sprintf("app_%s.log", time.Now().Format("20060102150405")))
 
 	if err := os.MkdirAll(logDir, 0755); err != nil {
 		return nil, fmt.Errorf("[Log] Error creating log file: %w", err)

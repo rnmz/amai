@@ -8,8 +8,10 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
+	"unicode/utf8"
 
 	"github.com/joho/godotenv"
 )
@@ -39,35 +41,83 @@ func CheckEnvParams() error {
 	return nil
 }
 
+func visualWidth(s string) int {
+	width := utf8.RuneCountInString(s)
+	for _, r := range s {
+		if r == '🚀' || r == '✨' {
+			width++
+		}
+	}
+	return width
+}
+
+func renderBox(lines []string, padding int) string {
+	maxLen := 0
+	for _, l := range lines {
+		w := visualWidth(l)
+		if w > maxLen {
+			maxLen = w
+		}
+	}
+
+	innerWidth := maxLen + (padding * 2)
+
+	var sb strings.Builder
+	sb.WriteString("╔" + strings.Repeat("═", innerWidth) + "╗\n")
+
+	for _, line := range lines {
+		w := visualWidth(line)
+		leftSpace := (innerWidth - w) / 2
+		rightSpace := innerWidth - w - leftSpace
+
+		sb.WriteString("║" + strings.Repeat(" ", leftSpace) + line + strings.Repeat(" ", rightSpace) + "║\n")
+	}
+
+	sb.WriteString("╚" + strings.Repeat("═", innerWidth) + "╝")
+	return sb.String()
+}
+
 func ShowStartMessage() {
-	banner := `
-    ╔═══════════════════════════════════════════════════════════╗
-    ║                                                           ║
-    ║      █████╗ ███╗   ███╗ █████╗ ██╗                        ║
-    ║     ██╔══██╗████╗ ████║██╔══██╗██║                        ║
-    ║     ███████║██╔████╔██║███████║██║                        ║
-    ║     ██╔══██║██║╚██╔╝██║██╔══██║██║                        ║
-    ║     ██║  ██║██║ ╚═╝ ██║██║  ██║██║                        ║
-    ║     ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝╚═╝                        ║
-    ║                                                           ║
-    ║     ✨ Your own blog ✨                                  ║
-    ║                                                           ║
-    ╚═══════════════════════════════════════════════════════════╝
-    `
-	fmt.Println(banner)
+	port := os.Getenv("BACKEND_PORT")
+	if port == "" {
+		port = "8080"
+	}
 	version := "ALPHA V1.0"
-	start := `
-    ╔═══════════════════════════════════════════════════════════╗
-    ║  Server started 🚀                                        ║
-    ║  Amai version: %s                                         ║
-    ║  Port: %s                                                 ║
-	║  Start time: %s                                           ║
-    ╚═══════════════════════════════════════════════════════════╝
-	`
-	fmt.Printf(start, version, os.Getenv("BACKEND_PORT"), time.Now().String())
+	now := time.Now().Format("2006-01-02 15:04:05")
+
+	logoLines := []string{
+		"",
+		"█████╗ ███╗   ███╗ █████╗ ██╗",
+		"██╔══██╗████╗ ████║██╔══██╗██║",
+		"███████║██╔████╔██║███████║██║",
+		"██╔══██║██║╚██╔╝██║██╔══██║██║",
+		"██║  ██║██║ ╚═╝ ██║██║  ██║██║",
+		"╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝╚═╝",
+		"",
+		"✨ Your own blog ✨",
+		"",
+	}
+
+	infoLines := []string{
+		"Server started 🚀",
+		fmt.Sprintf("Amai version: %s", version),
+		fmt.Sprintf("Port: %s", port),
+		fmt.Sprintf("Start time: %s", now),
+	}
+
+	fmt.Println(renderBox(logoLines, 4))
+	fmt.Println()
+	fmt.Println(renderBox(infoLines, 4))
 }
 
 func StartServer() {
+	logger, err := InitLogger()
+	if err != nil {
+		return
+	}
+
+	defer logger.Close()
+
 	db := InitDatabase()
 	r := GinApp(db)
 	Routing(r)

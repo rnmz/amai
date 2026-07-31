@@ -1,0 +1,22 @@
+{
+  "nav": {
+    "main": "ホーム",
+    "about": "プロフィール",
+    "articles": "記事"
+  },
+  "not_found": {
+    "title": "ページが見つかりません",
+    "text": "お探しのページは存在しないか、移動された可能性があります。"
+  },
+  "admin": {
+    "delete_article": "記事を削除",
+    "create_article": "記事を作成",
+    "edit_article": "記事を編集",
+    "upload_file": "ファイルをアップロード",
+    "delete_file": "ファイルを削除"
+  },
+  "hint": {
+    "write_text": "ここに記事を入力してください",
+    "title": "記事タイトル"
+  }
+}

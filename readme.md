@@ -44,16 +44,16 @@ We currently support the following languages:
 
   * 🇺🇸 **English** (100%)
   * 🇷🇺 **Russian** (100%)
+  * 🇯🇵 **Japanese** (100%, Translated by AI)
 
 -----
 
 ## 🖼️ Preview
 
-<p align="center"\>
-<img src="./readme/gallery/about.png" width="45%" alt="About Page" /\>
-<img src="./readme/gallery/articles.png" width="45%" alt="Articles List" /\>
-</p\>
-
+<div style="display: flex; justify-content: center; gap: 16px;">
+  <img src="./readme/gallery/about.png" width="45%" alt="About Page" />
+  <img src="./readme/gallery/articles.png" width="45%" alt="Articles List" />
+</div>
 -----
 
 # Roadmap
