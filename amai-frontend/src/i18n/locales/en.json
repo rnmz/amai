@@ -1,8 +1,11 @@
 {
   "nav": {
     "main": "main",
+    "articles": "articles",
     "about": "about",
-    "articles": "articles"
+
+    "theme": "theme",
+    "lang": "lang"
   },
   "not_found": {
     "title": "Page Not Found",
@@ -18,5 +21,9 @@
   "hint": {
     "write_text": "Write your article here",
     "title": "Article Title"
+  },
+  "theme": {
+    "light": "light",
+    "dark": "dark"
   }
 }

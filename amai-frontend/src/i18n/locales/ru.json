@@ -1,8 +1,11 @@
 {
   "nav": {
-    "main": "main",
+    "main": "главная",
+    "articles": "статьи",
     "about": "об авторе",
-    "articles": "articles"
+
+    "theme": "тема",
+    "lang": "язык"
   },
   "not_found": {
     "title": "Страница не найдена",
@@ -18,5 +21,13 @@
   "hint": {
     "write_text": "Напишите свою статью сюда",
     "title": "Название статьи"
+  },
+  "theme": {
+    "light": "светлая",
+    "dark": "тёмная"
+  },
+  "articles": {
+    "published": "Опубликовано",
+    "edited": "Изменено"
   }
 }

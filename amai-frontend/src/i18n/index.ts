@@ -1,6 +1,7 @@
-import { createI18n, type I18n } from "vue-i18n";
+import { createI18n } from "vue-i18n";
 import ru from './locales/ru.json'
 import en from './locales/en.json'
+import jp from './locales/jp.json'
 
 const i18n = createI18n({
     legacy: false,
@@ -8,7 +9,8 @@ const i18n = createI18n({
     fallbackLocale: 'en-US',
     messages: {
         'en-US': en,
-        'ru-RU': ru
+        'ru-RU': ru,
+        'ja-JP': jp
     },
     globalInjection: true
 })

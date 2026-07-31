@@ -1,8 +1,11 @@
 {
   "nav": {
     "main": "ホーム",
+    "articles": "記事",
     "about": "プロフィール",
-    "articles": "記事"
+
+    "theme": "テーマ",
+    "lang": "言語"
   },
   "not_found": {
     "title": "ページが見つかりません",
@@ -18,5 +21,9 @@
   "hint": {
     "write_text": "ここに記事を入力してください",
     "title": "記事タイトル"
+  },
+  "theme": {
+    "light": "ライト",
+    "dark": "ダーク"
   }
 }

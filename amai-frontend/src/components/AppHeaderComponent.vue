@@ -44,14 +44,14 @@ onMounted(() => {
 
       <div class="settings">
         <div class="settings-item">
-          <label for="theme-select">theme:</label>
+          <label for="theme-select">{{ t('nav.theme') }}:</label>
           <select id="theme-select" v-model="currentTheme" @change="changeTheme()">
-            <option value="light">light</option>
-            <option value="dark">dark</option>
+            <option value="light">{{ t('theme.light') }}</option>
+            <option value="dark">{{ t('theme.dark') }}</option>
           </select>
         </div>
         <div class="settings-item">
-          <label for="lang-select">lang:</label>
+          <label for="lang-select">{{ t('nav.lang') }}:</label>
           <select id="lang-select" v-model="lang" @change="changeLanguage()">
             <option value="en-US" class="lang_select_item">en</option>
             <option value="ru-RU" class="lang_select_item">ru</option>
@@ -72,6 +72,7 @@ onMounted(() => {
 .header {
   font-family: 'MPPlusS1p', serif;
   border-bottom: 5px solid #d8d8d8;
+  margin-top: 50px;
 }
 
 .header-top {
@@ -87,7 +88,6 @@ onMounted(() => {
   line-height: 1;
   font-family: 'Nunito', serif;
 }
-
 .settings {
   display: flex;
   flex-direction: column;

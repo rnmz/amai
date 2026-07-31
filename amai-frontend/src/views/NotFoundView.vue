@@ -1,13 +1,15 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n();
 </script>
 
 <template>
   <div class="not-found-page container">
     <div class="not-found-content">
       <h1 class="error-code">404</h1>
-      <h2 class="error-title">Page not found / ページが見つかりません</h2>
-      <p class="error-message">
-     </p>
+      <h2 class="error-title">{{ t('not_found.title')}}</h2>
+      <p class="error-message">{{ t('not_found.text') }}</p>
     </div>
   </div>
 </template>

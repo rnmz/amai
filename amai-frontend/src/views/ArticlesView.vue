@@ -12,6 +12,7 @@ import ArticleBoxComponent from '@/components/ArticleBoxComponent.vue'
 .articles_list {
   width: 100%;
   display: flex;
+  padding-top: 40px;
   gap: 30px;
 }
 
@@ -19,6 +20,7 @@ import ArticleBoxComponent from '@/components/ArticleBoxComponent.vue'
   .articles_list {
     flex-direction: column;
     display: flex;
+    padding-top: 40px;
     gap: 30px;
   }
 }
