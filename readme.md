@@ -32,7 +32,7 @@ Amai is built using a robust and modern set of tools:
 
 ## 📝 Markdown & Post Features
 
-Amai ensures consistent formatting across standard specs while offering custom enhancements for rich content creation. Check out the [**Writing Guide**](./readme/post_example) for a full example of what you can do in a post.
+Amai ensures consistent formatting across standard specs while offering custom enhancements for rich content creation. Check out the [**Writing Guide**](./docs/) for a full example of what you can do in a post.
 
 ### Spec Compliance
   * **Markdown 1.0:** `100%`
