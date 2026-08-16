@@ -33,25 +33,28 @@ const { t } = useI18n();
 .error-code {
   font-size: 6rem;
   font-weight: 500;
-  color: #111;
+  color: var(--color-text);
   margin: 0;
   line-height: 1;
   letter-spacing: -2px;
+  transition: color 0.2s ease;
 }
 
 .error-title {
   font-size: 1.5rem;
   font-weight: 400;
-  color: #222;
+  color: var(--md-text);
   margin: 16px 0 12px;
   line-height: 1.3;
+  transition: color 0.2s ease;
 }
 
 .error-message {
   font-size: 1rem;
-  color: #666;
+  color: var(--md-text-secondary);
   line-height: 1.6;
   margin: 0 0 32px 0;
+  transition: color 0.2s ease;
 }
 
 @media (max-width: 768px) {

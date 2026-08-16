@@ -1,6 +1,6 @@
 {
   "name": "amai-frontend",
-  "version": "0.0.0",
+  "version": "1.0-BETA",
   "private": true,
   "type": "module",
   "scripts": {
@@ -16,7 +16,10 @@
     "format": "prettier --write --experimental-cli src/"
   },
   "dependencies": {
-    "axios": "^1.18.1",
+    "axios": "^1.19.0",
+    "chart.js": "^4.5.1",
+    "highlight.js": "^11.11.1",
+    "katex": "^0.18.1",
     "marked": "^18.0.7",
     "pinia": "^3.0.4",
     "vue": "^3.5.38",

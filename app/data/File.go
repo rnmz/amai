@@ -19,6 +19,34 @@ type FileEntity struct {
 	FileExt string    `db:"file_ext"`
 }
 
+func GetAllPagesFile(db *sqlx.DB, ctx context.Context) (int, error) {
+	var items int
+
+	slog.Debug("[DB] Requesting total pages count")
+	err := db.GetContext(ctx, &items, "SELECT COUNT(*) FROM files")
+	if err != nil {
+		slog.Error("[DB] Failed to count files", "error", err)
+		return 0, err
+	}
+
+	pagesCount := (items + 20 - 1) / 20
+	slog.Debug("[DB] Total pages calculated", "count", pagesCount, "totalItems", items)
+	return pagesCount, nil
+}
+
+func GetAllFiles(db *sqlx.DB, ctx context.Context, page int) ([]FileEntity, error) {
+	var files []FileEntity
+	offset := (page - 1) * 20
+
+	slog.Info("[DB] Requesting posts list", "page", page, "offset", offset)
+	err := db.SelectContext(ctx, &files, "SELECT * FROM files ORDER BY file_id DESC LIMIT 20 OFFSET $1", offset)
+	if err != nil {
+		slog.Error("[DB] Failed to fetch files list", "page", page, "error", err)
+		return nil, err
+	}
+	return files, nil
+}
+
 func GetFileById(db *sqlx.DB, ctx context.Context, id uuid.UUID) (string, error) {
 	path := os.Getenv("FILE_PATH")
 	var fileInfo FileEntity
@@ -68,22 +96,23 @@ func UploadFile(db *sqlx.DB, file io.Reader, ext string) (string, error) {
 	}
 
 	_, dbErr := db.NamedExec(
-		`INSERT INTO files (file_id, file_ext) VALUES (:FileId, :FileExt)`,
-		map[string]string{
-			"FileId":  generatedFileName,
-			"FileExt": ext,
+		`INSERT INTO files (file_id, file_ext) VALUES (:file_id, :file_ext)`,
+		FileEntity{
+			FileId:  uuid.MustParse(generatedFileName),
+			FileExt: ext,
 		},
 	)
 	if dbErr != nil {
-		slog.Error("[DB] Failed to save file metadata to database", "error", fileErr)
+		slog.Error("[DB] Failed to save file metadata to database", "error", dbErr)
 		os.Remove(filePath)
 		return "", dbErr
 	}
 
 	return generatedFileName, nil
 }
+
 func DeleteFile(db *sqlx.DB, ctx context.Context, id uuid.UUID) error {
-	path := os.Getenv("BACKEND_FILE_DIR")
+	path := os.Getenv("FILE_PATH")
 
 	tx, txErr := db.BeginTxx(ctx, nil)
 	if txErr != nil {
@@ -93,14 +122,14 @@ func DeleteFile(db *sqlx.DB, ctx context.Context, id uuid.UUID) error {
 	defer tx.Rollback()
 
 	var fileInfo FileEntity
-
-	slog.Info("[Storage] Deleting file", "id", id)
-
-	db.GetContext(ctx, &fileInfo, "SELECT * FROM files WHERE file_id = $1", id.String())
-
-	slog.Debug("[DB] Fetched file metadata", "id", id, "metadata", fileInfo)
-
-	file := filepath.Clean(filepath.Join(path, id.String()+fileInfo.FileExt))
+	if err := tx.GetContext(ctx, &fileInfo, "SELECT * FROM files WHERE file_id = $1", id.String()); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			slog.Warn("[DB] File metadata not found for deletion", "id", id)
+			return fmt.Errorf("file not found: %s", id.String())
+		}
+		slog.Error("[DB] Failed to fetch file metadata", "id", id, "error", err)
+		return err
+	}
 
 	res, execErr := tx.ExecContext(ctx, "DELETE FROM files WHERE file_id = $1", id.String())
 	if execErr != nil {
@@ -118,15 +147,15 @@ func DeleteFile(db *sqlx.DB, ctx context.Context, id uuid.UUID) error {
 		return fmt.Errorf("no rows affected for id %s", id.String())
 	}
 
-	osErr := os.Remove(file)
-	if osErr != nil {
-		slog.Error("[Storage] Failed to remove file from disk", "error", osErr)
-		return osErr
-	}
-
 	if commitErr := tx.Commit(); commitErr != nil {
 		slog.Error("[Transaction] Failed to commit transaction", "error", commitErr)
 		return commitErr
+	}
+
+	file := filepath.Clean(filepath.Join(path, id.String()+fileInfo.FileExt))
+	if osErr := os.Remove(file); osErr != nil {
+		slog.Error("[Storage] Failed to remove file from disk after DB commit", "id", id, "error", osErr)
+		return osErr
 	}
 
 	slog.Info("[Storage] File deleted successfully", "id", id)

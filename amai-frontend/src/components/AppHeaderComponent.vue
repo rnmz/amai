@@ -2,15 +2,12 @@
 import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { useAuthStore } from '@/stores/auth'
+import { useTheme } from '@/composables/useTheme'
 
 const { t, locale } = useI18n()
-
-const currentTheme = ref('light')
-
-function changeTheme() {
-  document.documentElement.className = currentTheme.value
-  localStorage.setItem('user-theme', currentTheme.value)
-}
+const authStore = useAuthStore()
+const { theme: currentTheme } = useTheme()
 
 const lang = ref(localStorage.getItem('user-lang') || locale.value)
 
@@ -21,17 +18,10 @@ function changeLanguage() {
 }
 
 onMounted(() => {
-  const savedTheme = localStorage.getItem('user-theme')
-  if (savedTheme) {
-    currentTheme.value = savedTheme
-  }
-  changeTheme()
-
   const savedLanguage = localStorage.getItem('user-lang')
   if (savedLanguage) {
     lang.value = savedLanguage
   }
-
   changeLanguage()
 })
 </script>
@@ -39,13 +29,14 @@ onMounted(() => {
 <template>
   <header class="header content-container">
     <div class="header-top">
-      <h1 class="logo" v-if="$route.meta.isAdminPage">Amai: Admin</h1>
-      <h1 class="logo" v-else>Amai</h1>
+      <RouterLink :to="authStore.isAuthenticated ? '/admin/articles' : '/'" class="logo-link">
+        <h1 class="logo">{{ authStore.isAuthenticated ? 'Amai: Admin' : 'Amai' }}</h1>
+      </RouterLink>
 
       <div class="settings">
         <div class="settings-item">
           <label for="theme-select">{{ t('nav.theme') }}:</label>
-          <select id="theme-select" v-model="currentTheme" @change="changeTheme()">
+          <select id="theme-select" v-model="currentTheme">
             <option value="light">{{ t('theme.light') }}</option>
             <option value="dark">{{ t('theme.dark') }}</option>
           </select>
@@ -60,7 +51,17 @@ onMounted(() => {
         </div>
       </div>
     </div>
-    <nav class="navigation">
+
+    <nav v-if="authStore.isAuthenticated" class="navigation">
+      <RouterLink to="/">{{ t('nav.main') }}</RouterLink>
+      <RouterLink :to="{ name: 'admin_articles' }">{{ t('nav.articles') }}</RouterLink>
+      <RouterLink :to="{ name: 'admin_upload' }">{{ t('nav.files') }}</RouterLink>
+      <RouterLink :to="{ name: 'admin_create_article' }">{{ t('nav.create') }}</RouterLink>
+      <RouterLink to="/about">{{ t('nav.about') }}</RouterLink>
+      <button type="button" class="logout-btn" @click="authStore.logout()">{{ t('nav.logout') }}</button>
+    </nav>
+
+    <nav v-else class="navigation">
       <RouterLink to="/">{{ t('nav.main') }}</RouterLink>
       <RouterLink to="/articles">{{ t('nav.articles') }}</RouterLink>
       <RouterLink to="/about">{{ t('nav.about') }}</RouterLink>
@@ -70,8 +71,8 @@ onMounted(() => {
 
 <style scoped>
 .header {
-  font-family: 'MPPlusS1p', serif;
-  border-bottom: 5px solid #d8d8d8;
+  font-family: 'Nunito', serif;
+  border-bottom: 5px solid var(--color-border);
   margin-top: 50px;
 }
 
@@ -79,6 +80,11 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+}
+
+.logo-link {
+  text-decoration: none;
+  color: inherit;
 }
 
 .logo {
@@ -104,21 +110,35 @@ onMounted(() => {
 }
 
 .settings-item label {
-  color: #000;
+  color: var(--color-text);
 }
 
 .settings-item select {
   font-family: inherit;
-  font-size: inherit;
-  border: none;
-  background: transparent;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 4px 10px;
   outline: none;
   cursor: pointer;
-  padding: 0;
-  margin: 0;
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.settings-item select:hover {
+  border-color: var(--md-link);
+}
+
+.settings-item select:focus {
+  border-color: var(--md-link);
+  box-shadow: 0 0 0 2px var(--md-selection-bg);
+}
+
+.settings-item select option {
+  background-color: var(--color-surface);
+  color: var(--color-text);
 }
 
 .navigation {
@@ -133,12 +153,27 @@ onMounted(() => {
 
 .navigation a {
   text-decoration: none;
-  color: #000;
+  color: var(--color-text);
   font-size: 1.3rem;
   transition: opacity 0.2s;
 }
 
 .navigation a:hover {
+  opacity: 0.6;
+}
+
+.logout-btn {
+  font-family: inherit;
+  font-size: 1.3rem;
+  color: var(--color-text);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: opacity 0.2s;
+}
+
+.logout-btn:hover {
   opacity: 0.6;
 }
 </style>

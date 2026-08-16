@@ -74,18 +74,26 @@ func CheckCookieAuth(c *gin.Context) error {
 	session.Expires = currTime.Add(sessionTTL)
 	sessions.Store(sessionId, session)
 
+	var isSecure bool
+	if os.Getenv("GIN_MODE") == "release" {
+		isSecure = true
+	} else {
+		isSecure = false
+	}
+
 	http.SetCookie(c.Writer, &http.Cookie{
 		Name:     "sessionId",
 		Value:    sessionId,
 		Path:     "/",
 		MaxAge:   int(sessionTTL.Seconds()),
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   isSecure,
 		SameSite: http.SameSiteLaxMode,
 	})
 	slog.Info("[Cookie] Session cookie updated", "sessionId", sessionId)
 	return nil
 }
+
 func Login(c *gin.Context) error {
 	user, pass, ok := c.Request.BasicAuth()
 	if !ok {
@@ -93,8 +101,8 @@ func Login(c *gin.Context) error {
 		return &AuthError{ErrorType: AuthErrorBasicAuthNotValid, ErrorMessage: "Invalid basic auth header"}
 	}
 
-	validUser := os.Getenv("admin_login")
-	validPass := os.Getenv("admin_password")
+	validUser := os.Getenv("ADMIN_LOGIN")
+	validPass := os.Getenv("ADMIN_PASSWORD")
 	if validUser == "" || validPass == "" {
 		slog.Error("[Auth] Admin credentials are not set in environment variables")
 		return &AuthError{ErrorType: AuthErrorAdminCredentialsInvalid, ErrorMessage: "Internal server configuration error"}
@@ -116,7 +124,22 @@ func Login(c *gin.Context) error {
 		LastSeen: currTime,
 	})
 
-	c.SetCookie("sessionId", sessionId, int(sessionTTL.Seconds()), "/", "", true, true)
+	var isSecure bool
+	if os.Getenv("GIN_MODE") == "release" {
+		isSecure = true
+	} else {
+		isSecure = false
+	}
+
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "sessionId",
+		Value:    sessionId,
+		Path:     "/",
+		MaxAge:   int(sessionTTL.Seconds()),
+		HttpOnly: true,
+		Secure:   isSecure,
+		SameSite: http.SameSiteLaxMode,
+	})
 
 	slog.Info("[Auth] User logged in successfully", "username", user, "sessionId", sessionId)
 	return nil
@@ -141,6 +164,23 @@ func Logout(c *gin.Context) error {
 	}
 
 	sessions.Delete(sessionId)
+
+	var isSecure bool
+	if os.Getenv("GIN_MODE") == "release" {
+		isSecure = true
+	} else {
+		isSecure = false
+	}
+
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "sessionId",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   isSecure,
+		SameSite: http.SameSiteLaxMode,
+	})
 	slog.Info("[Session] User logged out successfully", "sessionId", sessionId)
 	return nil
 }

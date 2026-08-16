@@ -6,3 +6,138 @@
   padding-right: 20px;
   box-sizing: border-box;
 }
+
+@font-face {
+  font-family: 'Noto Sans JP';
+  src: url('@/assets/font/NotoSansJP-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nunito';
+  src: url('@/assets/font/Nunito-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --main-font: 'Nunito', 'Noto Sans JP', sans-serif;
+
+  --color-bg: #f9f9f9;
+  --color-text: #111;
+  --color-surface: #ffffff;
+  --color-border: #d8d8d8;
+
+  --md-text: #222222;
+  --md-text-secondary: #57606a;
+  --md-link: #0e9c3d;
+  --md-link-hover: #0b7a30;
+  --md-accent: #14eb51;
+
+  --md-border: #d0d7de;
+  --md-border-light: #eaeef2;
+
+  --md-bg-code: rgba(175, 184, 193, 0.2);
+  --md-bg-pre: #f5f5f5;
+  --md-bg-table-header: #f6f8fa;
+  --md-bg-table-row-alt: #f9fafb;
+  --md-bg-table-row-hover: rgba(20, 235, 81, 0.06);
+  --md-bg-code-header: #eef1f4;
+  --md-border-code-header: #e2e5e9;
+  --md-bg-blockquote: rgba(14, 164, 57, 0.05);
+  --md-bg-disclaimer: #f9fafb;
+  --md-bg-disclaimer-inline: rgba(198, 198, 198, 0.14);
+  --md-text-disclaimer-inline: #3d3d3d;
+
+  --md-checkbox-border: #8b949e;
+  --md-checkbox-bg: #ffffff;
+  --md-checkbox-checked: #0b7a30;
+
+  --md-scrollbar-thumb: #c9ccd1;
+  --md-scrollbar-thumb-hover: #a8abb1;
+
+  --md-selection-bg: rgba(20, 235, 81, 0.3);
+  --md-selection-text: #1f2328;
+
+  --md-num-positive: #0b7a30;
+  --md-num-negative: #c0392b;
+  --md-num-neutral: #57606a;
+
+  --md-chart-error: #e11d48;
+  --md-mark-bg: rgba(20, 235, 81, 0.25);
+  --md-mark-red-bg: rgba(192, 57, 43, 0.18);
+
+  color-scheme: light;
+}
+
+html[lang='ja'] {
+  --main-font: 'Noto Sans JP', 'Nunito', sans-serif;
+}
+
+html[data-theme='dark'] {
+  --color-bg: #121212;
+  --color-text: #f0f0f0;
+  --color-surface: #1e1e1e;
+  --color-border: #3a3a3a;
+  
+  --md-text: #e2e2e2;
+  --md-text-secondary: #9aa4af;
+  --md-link: #34d976;
+  --md-link-hover: #5be08e;
+  --md-accent: #14eb51;
+
+  --md-border: #3a3f45;
+  --md-border-light: #2c2f33;
+
+  --md-bg-code: rgba(175, 184, 193, 0.15);
+  --md-bg-pre: #1c1c1c;
+  --md-bg-table-header: #1a1d21;
+  --md-bg-table-row-alt: #181a1d;
+  --md-bg-table-row-hover: rgba(20, 235, 81, 0.1);
+  --md-bg-code-header: #1a1d21;
+  --md-border-code-header: #2c2f33;
+  --md-bg-blockquote: rgba(20, 235, 81, 0.08);
+  --md-bg-disclaimer: #1a1d21;
+  --md-bg-disclaimer-inline: rgba(198, 198, 198, 0.1);
+  --md-text-disclaimer-inline: #cfcfcf;
+
+  --md-checkbox-border: #6a7178;
+  --md-checkbox-bg: #2a2a2a;
+  --md-checkbox-checked: #34d976;
+
+  --md-scrollbar-thumb: #4a4f55;
+  --md-scrollbar-thumb-hover: #5c6167;
+
+  --md-selection-bg: rgba(20, 235, 81, 0.35);
+  --md-selection-text: #f0f0f0;
+
+  --md-num-positive: #34d976;
+  --md-num-negative: #ef5350;
+  --md-num-neutral: #9aa4af;
+
+  --md-chart-error: #ff5c7a;
+  --md-mark-bg: rgba(20, 235, 81, 0.2);
+  --md-mark-red-bg: rgba(239, 83, 80, 0.2);
+
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--main-font), serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.content-container {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 20px 10px 20px;
+  box-sizing: border-box;
+}

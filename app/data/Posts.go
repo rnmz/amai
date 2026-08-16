@@ -9,16 +9,16 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type Post struct {
+type PostEntity struct {
 	Id      uuid.UUID `db:"id"`
 	Title   string    `db:"title"`
-	Poster  string    `db:"poster"`
+	Poster  uuid.UUID `db:"poster"`
 	Created time.Time `db:"created"`
 	Updated time.Time `db:"updated"`
 	Body    string    `db:"body"`
 }
 
-func GetAllPages(db *sqlx.DB, ctx context.Context) (int, error) {
+func GetAllPagesPost(db *sqlx.DB, ctx context.Context) (int, error) {
 	var items int
 
 	slog.Debug("[DB] Requesting total pages count")
@@ -28,17 +28,17 @@ func GetAllPages(db *sqlx.DB, ctx context.Context) (int, error) {
 		return 0, err
 	}
 
-	pagesCount := (items + 50 - 1) / 50
+	pagesCount := (items + 20 - 1) / 20
 	slog.Debug("[DB] Total pages calculated", "count", pagesCount, "totalItems", items)
 	return pagesCount, nil
 }
 
-func GetAllPosts(db *sqlx.DB, ctx context.Context, page int) ([]Post, error) {
-	var posts []Post
-	offset := (page - 1) * 50
+func GetAllPosts(db *sqlx.DB, ctx context.Context, page int) ([]PostEntity, error) {
+	var posts []PostEntity
+	offset := (page - 1) * 20
 
 	slog.Info("[DB] Requesting posts list", "page", page, "offset", offset)
-	err := db.SelectContext(ctx, &posts, "SELECT * FROM posts ORDER BY created DESC LIMIT 50 OFFSET $1", offset)
+	err := db.SelectContext(ctx, &posts, "SELECT * FROM posts ORDER BY created DESC LIMIT 20 OFFSET $1", offset)
 	if err != nil {
 		slog.Error("[DB] Failed to fetch posts list", "page", page, "error", err)
 		return nil, err
@@ -46,19 +46,19 @@ func GetAllPosts(db *sqlx.DB, ctx context.Context, page int) ([]Post, error) {
 	return posts, nil
 }
 
-func GetPostById(db *sqlx.DB, ctx context.Context, id uuid.UUID) (Post, error) {
-	var post Post
+func GetPostById(db *sqlx.DB, ctx context.Context, id uuid.UUID) (PostEntity, error) {
+	var post PostEntity
 
 	slog.Info("[DB] Requesting post by ID", "id", id)
 	err := db.GetContext(ctx, &post, "SELECT * FROM posts WHERE id = $1", id.String())
 	if err != nil {
 		slog.Error("[DB] Failed to fetch post", "id", id, "error", err)
-		return Post{}, err
+		return PostEntity{}, err
 	}
 	return post, nil
 }
 
-func AddPost(db *sqlx.DB, ctx context.Context, post Post) error {
+func AddPost(db *sqlx.DB, ctx context.Context, post PostEntity) error {
 	slog.Info("[Transaction] Starting transaction to add post")
 	tx, txErr := db.BeginTxx(ctx, nil)
 	currentTime := time.Now().UTC()
@@ -97,7 +97,7 @@ func AddPost(db *sqlx.DB, ctx context.Context, post Post) error {
 	return nil
 }
 
-func EditPost(db *sqlx.DB, ctx context.Context, post Post) error {
+func EditPost(db *sqlx.DB, ctx context.Context, post PostEntity) error {
 	slog.Info("[Transaction] Starting transaction to edit post", "id", post.Id)
 	tx, txErr := db.BeginTxx(ctx, nil)
 

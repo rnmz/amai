@@ -17,8 +17,10 @@ import (
 func GinApp(db *sqlx.DB) *gin.Engine {
 	if os.Getenv("GIN_MODE") == "release" {
 		gin.SetMode(gin.ReleaseMode)
-	} else {
+	} else if os.Getenv("GIN_MODE") == "debug" {
 		gin.SetMode(gin.DebugMode)
+	} else {
+		panic("GIN MODE ERROR: GIN_MODE MUST BE release OR debug")
 	}
 
 	router := gin.New()
@@ -32,12 +34,22 @@ func GinApp(db *sqlx.DB) *gin.Engine {
 	router.Use(rateLimit())
 	router.Use(cors())
 
-	trustedProxyIpV4 := os.Getenv("TRUSTED_PROXY_IPV4")
-	trustedProxyIpV6 := os.Getenv("TRUSTED_PROXY_IPV6")
-	err := router.SetTrustedProxies([]string{trustedProxyIpV4, trustedProxyIpV6})
+	trustedProxies := make([]string, 0, 2)
+	if v := os.Getenv("TRUSTED_PROXY_IPV4"); v != "" {
+		trustedProxies = append(trustedProxies, v)
+	}
+	if v := os.Getenv("TRUSTED_PROXY_IPV6"); v != "" {
+		trustedProxies = append(trustedProxies, v)
+	}
 
-	if err != nil {
-		slog.Error("SetTrustedProxies error", "error", err)
+	if len(trustedProxies) > 0 {
+		if err := router.SetTrustedProxies(trustedProxies); err != nil {
+			slog.Error("SetTrustedProxies error", "error", err)
+		}
+	} else {
+		if err := router.SetTrustedProxies(nil); err != nil {
+			slog.Error("SetTrustedProxies error", "error", err)
+		}
 	}
 
 	return router
@@ -87,9 +99,7 @@ func authMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		err := auth.CheckCookieAuth(c)
 		if err != nil {
-			c.Header("WWW-Authenticate", `Basic realm="Authorization Required"`)
-			c.AbortWithStatus(http.StatusUnauthorized)
-			time.Sleep(500 * time.Millisecond)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "unauthorized"})
 			slog.Info("[Gin] Auth required")
 			return
 		}
@@ -99,7 +109,8 @@ func authMiddleware() gin.HandlerFunc {
 
 func rateLimit() gin.HandlerFunc {
 	type client struct {
-		limiter *rate.Limiter
+		limiter  *rate.Limiter
+		lastSeen time.Time
 	}
 
 	var (
@@ -107,13 +118,30 @@ func rateLimit() gin.HandlerFunc {
 		clients = make(map[string]*client)
 	)
 
+	go func() {
+		ticker := time.NewTicker(time.Minute)
+		defer ticker.Stop()
+		for range ticker.C {
+			mut.Lock()
+			for ip, cl := range clients {
+				if time.Since(cl.lastSeen) > 3*time.Minute {
+					delete(clients, ip)
+				}
+			}
+			mut.Unlock()
+		}
+	}()
+
 	return func(ctx *gin.Context) {
 		ip := ctx.ClientIP()
+
 		mut.Lock()
-		if _, exists := clients[ip]; !exists {
-			clients[ip] = &client{limiter: rate.NewLimiter(5, 5)}
+		cl, exists := clients[ip]
+		if !exists {
+			cl = &client{limiter: rate.NewLimiter(30, 30)}
+			clients[ip] = cl
 		}
-		cl := clients[ip]
+		cl.lastSeen = time.Now()
 		mut.Unlock()
 
 		if !cl.limiter.Allow() {
@@ -122,14 +150,14 @@ func rateLimit() gin.HandlerFunc {
 		}
 		ctx.Next()
 	}
-
 }
 
 func cors() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Origin", os.Getenv("TRUSTED_DOMAIN"))
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)

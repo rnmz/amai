@@ -63,17 +63,25 @@ func renderBox(lines []string, padding int) string {
 	innerWidth := maxLen + (padding * 2)
 
 	var sb strings.Builder
-	sb.WriteString("╔" + strings.Repeat("═", innerWidth) + "╗\n")
+	sb.WriteString("╔")
+	sb.WriteString(strings.Repeat("═", innerWidth))
+	sb.WriteString("╗\n")
 
 	for _, line := range lines {
 		w := visualWidth(line)
 		leftSpace := (innerWidth - w) / 2
 		rightSpace := innerWidth - w - leftSpace
 
-		sb.WriteString("║" + strings.Repeat(" ", leftSpace) + line + strings.Repeat(" ", rightSpace) + "║\n")
+		sb.WriteString("║")
+		sb.WriteString(strings.Repeat(" ", leftSpace))
+		sb.WriteString(line)
+		sb.WriteString(strings.Repeat(" ", rightSpace))
+		sb.WriteString("║\n")
 	}
 
-	sb.WriteString("╚" + strings.Repeat("═", innerWidth) + "╝")
+	sb.WriteString("╚")
+	sb.WriteString(strings.Repeat("═", innerWidth))
+	sb.WriteString("╝")
 	return sb.String()
 }
 
@@ -87,14 +95,14 @@ func ShowStartMessage() {
 
 	logoLines := []string{
 		"",
-		"█████╗ ███╗   ███╗ █████╗ ██╗",
+		" █████╗ ███╗   ███╗ █████╗ ██╗",
 		"██╔══██╗████╗ ████║██╔══██╗██║",
 		"███████║██╔████╔██║███████║██║",
 		"██╔══██║██║╚██╔╝██║██╔══██║██║",
 		"██║  ██║██║ ╚═╝ ██║██║  ██║██║",
 		"╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝╚═╝",
 		"",
-		"✨ Your own blog ✨",
+		"✨ Express more than words ✨",
 		"",
 	}
 
