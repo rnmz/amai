@@ -16,7 +16,7 @@ const props = withDefaults(defineProps<PostProps>(), {
   title: '...',
   publishedAt: '2025-07-17',
   editedAt: null,
-  imageUrl: new URL('@/assets/question.svg', import.meta.url).href,
+  imageUrl: '',
   isAdmin: false,
 })
 
@@ -78,28 +78,32 @@ function handleCardClick() {
 .card {
   display: flex;
   align-items: center;
-  border: 1px solid var(--color-border);
-  border-radius: 20px;
+  border: 1px solid var(--md-border);
+  border-radius: 16px;
   overflow: hidden;
   background-color: var(--color-surface);
   color: var(--color-text);
   width: 100%;
   max-width: 520px;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-  transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1), 
-              box-shadow 0.25s cubic-bezier(0.2, 0, 0, 1),
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+              box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
               opacity 0.15s ease;
+  backdrop-filter: blur(8px);
 }
 
 .card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
+  border-color: var(--md-accent);
+  box-shadow: 0 12px 30px rgba(99, 102, 241, 0.15);
 }
 
 .card.is-loading {
-  opacity: 0.6;
+  opacity: 0.5;
   pointer-events: none;
+  filter: grayscale(0.4);
 }
 
 .card-image-wrapper {
@@ -109,6 +113,7 @@ function handleCardClick() {
   flex-shrink: 0;
   overflow: hidden;
   aspect-ratio: 4 / 3;
+  background-color: var(--md-bg-pre);
 }
 
 .card-image {
@@ -116,11 +121,11 @@ function handleCardClick() {
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 0.4s ease;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .card:hover .card-image {
-  transform: scale(1.05);
+  transform: scale(1.06);
 }
 
 .admin-actions {
@@ -131,26 +136,30 @@ function handleCardClick() {
   gap: 6px;
   z-index: 2;
   padding: 4px;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(8px);
+  background: rgba(13, 17, 23, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--md-border);
   border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .action-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border: none;
   border-radius: 6px;
   color: #ffffff;
   cursor: pointer;
-  transition: transform 0.1s ease, opacity 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .action-btn:hover {
-  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .action-btn:active {
@@ -161,8 +170,16 @@ function handleCardClick() {
   background-color: var(--md-num-negative);
 }
 
+.delete-btn:hover {
+  background-color: #dc2626;
+}
+
 .edit-btn {
-  background-color: var(--md-link);
+  background-color: var(--md-accent);
+}
+
+.edit-btn:hover {
+  background-color: var(--md-accent-hover);
 }
 
 .card-content {
@@ -182,31 +199,48 @@ function handleCardClick() {
   overflow: hidden;
   word-break: break-word;
   overflow-wrap: anywhere;
+  transition: color 0.2s ease;
+}
+
+.card:hover .card-title {
+  color: var(--md-accent);
 }
 
 .card-meta p {
-  margin: 4px 0;
-  font-size: 0.85rem;
+  margin: 6px 0;
+  font-size: 0.88rem;
   color: var(--md-text-secondary);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  font-weight: 500;
 }
 
 @media (max-width: 768px) {
   .card {
     flex-direction: column;
     align-items: stretch;
-    border-radius: 16px;
+    border-radius: 14px;
   }
 
   .card-image-wrapper {
     width: 100%;
+    height: auto;
     aspect-ratio: 16 / 9;
   }
 
   .card-content {
     padding: 16px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .card-title {
+    font-size: 1.05rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
   }
 }
 </style>

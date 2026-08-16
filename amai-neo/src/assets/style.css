@@ -1,0 +1,148 @@
+.container {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding-left: 20px;
+  padding-right: 20px;
+  box-sizing: border-box;
+}
+
+@font-face {
+  font-family: 'Noto Sans JP';
+  src: url('@/assets/font/NotoSansJP-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nunito';
+  src: url('@/assets/font/Nunito-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --main-font: 'Nunito', 'Noto Sans JP', sans-serif;
+
+  /* === Светлая тема (Light Mode) === */
+  --color-bg: #f8fafc;
+  --color-text: #0f172a;
+  --color-surface: #ffffff;
+  --color-border: rgba(15, 23, 42, 0.12);
+
+  --md-text: #0f172a;
+  --md-text-secondary: #64748b;
+  --md-link: #0284c7;
+  --md-link-hover: #0369a1;
+  --md-accent: #6366f1;
+
+  --md-border: rgba(15, 23, 42, 0.12);
+  --md-border-light: rgba(15, 23, 42, 0.06);
+
+  --md-bg-code: rgba(99, 102, 241, 0.08);
+  --md-bg-pre: #f1f5f9;
+  --md-bg-table-header: #e2e8f0;
+  --md-bg-table-row-alt: rgba(241, 245, 249, 0.5);
+  --md-bg-table-row-hover: rgba(99, 102, 241, 0.08);
+  --md-bg-code-header: #e2e8f0;
+  --md-border-code-header: rgba(15, 23, 42, 0.1);
+  --md-bg-blockquote: rgba(99, 102, 241, 0.06);
+  --md-bg-disclaimer: rgba(234, 179, 8, 0.08);
+  --md-bg-disclaimer-inline: rgba(234, 179, 8, 0.15);
+  --md-text-disclaimer-inline: #854d0e;
+
+  --md-checkbox-border: #94a3b8;
+  --md-checkbox-bg: #ffffff;
+  --md-checkbox-checked: #6366f1;
+
+  --md-scrollbar-thumb: #cbd5e1;
+  --md-scrollbar-thumb-hover: #94a3b8;
+
+  --md-selection-bg: rgba(99, 102, 241, 0.25);
+  --md-selection-text: #0f172a;
+
+  --md-num-positive: #16a34a;
+  --md-num-negative: #dc2626;
+  --md-num-neutral: #64748b;
+
+  --md-chart-error: #ef4444;
+  --md-mark-bg: rgba(250, 204, 21, 0.3);
+  --md-mark-red-bg: rgba(239, 68, 68, 0.2);
+
+  color-scheme: light;
+}
+
+html[lang='ja'] {
+  --main-font: 'Noto Sans JP', 'Nunito', sans-serif;
+}
+
+html[data-theme='dark'] {
+  /* === Тёмная тема (Dark Mode) === */
+  --color-bg: #0d1117;
+  --color-text: #e6edf3;
+  --color-surface: #161b22;
+  --color-border: rgba(255, 255, 255, 0.12);
+  
+  --md-text: #e6edf3;
+  --md-text-secondary: #8b949e;
+  --md-link: #38bdf8;
+  --md-link-hover: #7dd3fc;
+  --md-accent: #6366f1;
+
+  --md-border: rgba(255, 255, 255, 0.12);
+  --md-border-light: rgba(255, 255, 255, 0.06);
+
+  --md-bg-code: rgba(110, 118, 129, 0.2);
+  --md-bg-pre: #161b22;
+  --md-bg-table-header: #161b22;
+  --md-bg-table-row-alt: rgba(255, 255, 255, 0.02);
+  --md-bg-table-row-hover: rgba(99, 102, 241, 0.1);
+  --md-bg-code-header: #21262d;
+  --md-border-code-header: rgba(255, 255, 255, 0.15);
+  --md-bg-blockquote: rgba(99, 102, 241, 0.08);
+  --md-bg-disclaimer: rgba(234, 179, 8, 0.08);
+  --md-bg-disclaimer-inline: rgba(234, 179, 8, 0.15);
+  --md-text-disclaimer-inline: #fde047;
+
+  --md-checkbox-border: #30363d;
+  --md-checkbox-bg: #161b22;
+  --md-checkbox-checked: #6366f1;
+
+  --md-scrollbar-thumb: #30363d;
+  --md-scrollbar-thumb-hover: #8b949e;
+
+  --md-selection-bg: rgba(99, 102, 241, 0.35);
+  --md-selection-text: #ffffff;
+
+  --md-num-positive: #22c55e;
+  --md-num-negative: #ef4444;
+  --md-num-neutral: #94a3b8;
+
+  --md-chart-error: #f87171;
+  --md-mark-bg: rgba(250, 204, 21, 0.25);
+  --md-mark-red-bg: rgba(239, 68, 68, 0.25);
+
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--main-font);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  transition: background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+              color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.content-container {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 20px 10px 20px;
+  box-sizing: border-box;
+}
