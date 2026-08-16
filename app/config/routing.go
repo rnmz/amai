@@ -1,4 +1,4 @@
-package app
+package config
 
 import (
 	"amai/blog/app/handler"
@@ -10,12 +10,12 @@ import (
 func Routing(e *gin.Engine) {
 	user := e.Group("/")
 	{
-		user.GET("/post/get", func(ctx *gin.Context) { handler.PostGetById(ctx) })
-		user.GET("/post/all", func(ctx *gin.Context) { handler.PostGetAll(ctx) })
-		user.GET("/file/get", func(ctx *gin.Context) { handler.FileGet(ctx) })
+		user.GET("/post/get", handler.PostGetById)
+		user.GET("/post/all", handler.PostGetAll)
+		user.GET("/file/get", handler.FileGet)
 
-		user.POST("/auth/login", func(ctx *gin.Context) { handler.AuthLogin(ctx) })
-		user.POST("/auth/logout", func(ctx *gin.Context) { handler.AuthLogout(ctx) })
+		user.POST("/auth/login", handler.AuthLogin)
+		user.POST("/auth/logout", handler.AuthLogout)
 
 		user.GET("/health", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"message": "alive"}) })
 	}
@@ -23,11 +23,13 @@ func Routing(e *gin.Engine) {
 	admin := e.Group("/admin/")
 	admin.Use(authMiddleware())
 	{
-		admin.POST("/post/create", func(ctx *gin.Context) { handler.PostCreate(ctx) })
-		admin.PUT("/post/edit", func(ctx *gin.Context) { handler.PostEdit(ctx) })
-		admin.DELETE("/post/delete", func(ctx *gin.Context) { handler.PostDelete(ctx) })
+		admin.POST("/post/create", handler.PostCreate)
+		admin.PUT("/post/edit", handler.PostEdit)
+		admin.DELETE("/post/delete", handler.PostDelete)
 
-		admin.POST("/file/upload", func(ctx *gin.Context) { handler.FileUpload(ctx) })
-		admin.DELETE("/file/delete", func(ctx *gin.Context) { handler.FileDelete(ctx) })
+		admin.GET("/file/list", handler.GetFilesList)
+		admin.POST("/file/upload", handler.FileUpload)
+		admin.DELETE("/file/delete", handler.FileDelete)
+		admin.GET("/whoami", func(ctx *gin.Context) { ctx.JSON(http.StatusOK, gin.H{"authenticated": true}) })
 	}
 }

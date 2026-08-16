@@ -13,14 +13,14 @@ import (
 
 type PostJSON struct {
 	Id      uuid.UUID  `json:"id"`
-	Title   string     `json:"title"`
-	Poster  string     `json:"poster_id"`
+	Title   string     `json:"title" binding:"required"`
+	Poster  uuid.UUID  `json:"poster_id" binding:"required"`
 	Created time.Time  `json:"created_at"`
 	Updated *time.Time `json:"updated_at"`
-	Body    string     `json:"body"`
+	Body    string     `json:"body" binding:"required"`
 }
 
-func parseRawPost(post data.Post) PostJSON {
+func parseRawPost(post data.PostEntity) PostJSON {
 	result := PostJSON{
 		Id:      post.Id,
 		Title:   post.Title,
@@ -49,7 +49,7 @@ func PostGetById(c *gin.Context) {
 	id, parseErr := uuid.Parse(queryId)
 	if parseErr != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "invalid UUID format"})
-		return 
+		return
 	}
 
 	rawPost, dataErr := data.GetPostById(db, c.Request.Context(), id)
@@ -82,7 +82,7 @@ func PostGetAll(c *gin.Context) {
 		return
 	}
 
-	pages, pagesErr := data.GetAllPages(db, c.Request.Context())
+	pages, pagesErr := data.GetAllPagesPost(db, c.Request.Context())
 	if pagesErr != nil {
 		c.Error(pagesErr)
 		c.Abort()
@@ -118,7 +118,7 @@ func PostCreate(c *gin.Context) {
 		return
 	}
 
-	err := data.AddPost(db, c.Request.Context(), data.Post{
+	err := data.AddPost(db, c.Request.Context(), data.PostEntity{
 		Title:  postJson.Title,
 		Poster: postJson.Poster,
 		Body:   postJson.Body,
@@ -145,7 +145,7 @@ func PostEdit(c *gin.Context) {
 		return
 	}
 
-	err := data.EditPost(db, c.Request.Context(), data.Post{
+	err := data.EditPost(db, c.Request.Context(), data.PostEntity{
 		Id:     postJson.Id,
 		Title:  postJson.Title,
 		Poster: postJson.Poster,
