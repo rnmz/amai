@@ -68,7 +68,9 @@ We currently support the following languages:
 - [ ] Setup panel (TUI) & hard way (docker)
 - [ ] Advanced layout options for PDF export
 
----### 🚀 Getting Started
+---
+
+### 🚀 Getting Started
 
 Easy way: WiP
 
