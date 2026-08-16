@@ -3,7 +3,7 @@ import { createPinia } from 'pinia'
 import i18n from '@/i18n/index.ts'
 
 import App from './App.vue'
-import router from './router'
+import router from './router/index.ts'
 
 import './assets/markdown.css'
 import 'highlight.js/styles/github.css'

@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import { login as apiLogin, logout as apiLogout } from "@/api/auth";
 import { getApiErrorMessage, api } from "@/api/client";
+import router from "@/router";
 
 export const useAuthStore = defineStore("auth", () => {
   const isAuthenticated = ref(false);
@@ -30,10 +31,11 @@ export const useAuthStore = defineStore("auth", () => {
     try {
       await apiLogout();
     } catch (e) {
-      error.value = getApiErrorMessage(e, "Failed to log in");
+      error.value = getApiErrorMessage(e, "Failed to log out");
     } finally {
       isAuthenticated.value = false;
       isLoading.value = false;
+      router.push({ name: "home" });
     }
   }
 
@@ -48,6 +50,7 @@ export const useAuthStore = defineStore("auth", () => {
 
   function forceLogout(): void {
     isAuthenticated.value = false;
+    router.push({ name: "home" });
   }
 
   return { isAuthenticated, isLoading, error, login, logout, checkAuth, forceLogout };

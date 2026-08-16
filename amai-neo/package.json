@@ -1,6 +1,6 @@
 {
-  "name": "amai-frontend",
-  "version": "1.0-BETA",
+  "name": "amai-neo",
+  "version": "1.0.1-BETA",
   "private": true,
   "type": "module",
   "scripts": {
