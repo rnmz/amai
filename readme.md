@@ -2,7 +2,7 @@
 
 **A lightweight, minimalist blog designed for simplicity.**
 
-[**View Gallery**](./readme/gallery) | [**Report Bug**](https://github.com/rnmz/amai/issues) | [**Writing Guide**](./readme/post_example)
+[**View Gallery**](./readme/gallery) | [**Report Bug**](https://github.com/rnmz/amai/issues) | [**Writing Guide**](./docs/)
 
 ---
 
