@@ -26,9 +26,47 @@ export function initHljsTheme(): void {
   watch(theme, (val) => setHljsTheme(val), { immediate: true })
 }
 
-function applyChartDefaults(theme: 'light' | 'dark') {
-  Chart.defaults.color = theme === 'dark' ? '#c9ccd1' : '#57606a'
-  Chart.defaults.borderColor = theme === 'dark' ? '#3a3f45' : '#d0d7de'
+function readCssVar(name: string, fallback: string): string {
+  if (typeof window === 'undefined') return fallback
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+  return value || fallback
+}
+
+function isDarkVariant(): boolean {
+  return document.documentElement.getAttribute('data-theme') === 'dark'
+}
+
+function applyChartDefaults() {
+  const textColor = readCssVar('--md-text', '#e2f1f8')
+  const gridColor = readCssVar('--md-border-light', 'rgba(0, 240, 255, 0.18)')
+  const accentColor = readCssVar('--md-accent', '#00f0ff')
+  const linkColor = readCssVar('--md-link', '#ff0055')
+  const bgColor = readCssVar('--color-bg', '#050811')
+
+  Chart.defaults.font.family = "'Chakra Petch', system-ui, -apple-system, sans-serif"
+  Chart.defaults.font.size = 12
+  Chart.defaults.font.weight = 'bold'
+  Chart.defaults.color = textColor
+  Chart.defaults.borderColor = gridColor
+
+  Chart.defaults.plugins.legend.labels.color = textColor
+  Chart.defaults.plugins.legend.labels.font = {
+    family: "'Orbitron', sans-serif",
+    size: 12,
+    weight: 'bold',
+  }
+
+  Chart.defaults.plugins.tooltip.backgroundColor = bgColor
+  Chart.defaults.plugins.tooltip.titleColor = accentColor
+  Chart.defaults.plugins.tooltip.bodyColor = textColor
+  Chart.defaults.plugins.tooltip.borderColor = linkColor
+  Chart.defaults.plugins.tooltip.borderWidth = 1
+  Chart.defaults.plugins.tooltip.padding = 10
+
+  Chart.defaults.elements.bar.borderWidth = 2
+  Chart.defaults.elements.line.borderWidth = 3
+  Chart.defaults.elements.point.radius = 5
+  Chart.defaults.elements.point.hoverRadius = 7
 }
 
 export function initChartTheme(): void {
@@ -36,8 +74,8 @@ export function initChartTheme(): void {
 
   watch(
     theme,
-    (val) => {
-      applyChartDefaults(val)
+    () => {
+      applyChartDefaults()
       document.querySelectorAll<HTMLCanvasElement>('canvas[data-chart-config]').forEach((canvas) => {
         const existing = chartInstances.get(canvas)
         if (existing) {
@@ -81,57 +119,59 @@ renderer.table = function (this: typeof renderer, token: Parameters<typeof origi
   return `<div class="table-wrapper">${html}</div>`
 }
 
+function indexOfOrUndefined(src: string, needle: string): number | undefined {
+  const idx = src.indexOf(needle)
+  return idx === -1 ? undefined : idx
+}
+
+const MARK_COLORS = new Set(['yellow', 'red', 'green', 'blue', 'orange', 'purple'])
+
+const NAMED_CSS_COLOR_RE = /^[a-zA-Z]{3,32}$/
+const HEX_CSS_COLOR_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/
+
+function isSafeCssColor(value: string): boolean {
+  return NAMED_CSS_COLOR_RE.test(value) || HEX_CSS_COLOR_RE.test(value)
+}
+
 const markExtension = {
   name: 'mark',
   level: 'inline' as const,
   start(src: string) {
-    return src.match(/==/)?.index
+    return indexOfOrUndefined(src, '{{mark:')
   },
   tokenizer(this: { lexer: { inlineTokens: (s: string) => Token[] } }, src: string) {
-    const rule = /^==([^=]+)==/
+    const rule = /^\{\{mark:([#a-zA-Z0-9]+)[ \t]+([\s\S]+?)\}\}/
     const match = rule.exec(src)
-    const text = match?.[1]
-    if (match && text) {
+    const color = match?.[1]
+    const text = match?.[2]
+    if (match && color && text) {
       return {
         type: 'mark',
         raw: match[0],
-        text,
+        color,
         tokens: this.lexer.inlineTokens(text),
       }
     }
     return undefined
   },
-  renderer(this: { parser: { parseInline: (tokens: Token[]) => string } }, token: {
-    tokens: Token[]
-  }) {
-    return `<mark>${this.parser.parseInline(token.tokens)}</mark>`
-  },
-}
+  renderer(
+    this: { parser: { parseInline: (tokens: Token[]) => string } },
+    token: { color: string; tokens: Token[] },
+  ) {
+    const inner = this.parser.parseInline(token.tokens)
 
-const markRedExtension = {
-  name: 'markRed',
-  level: 'inline' as const,
-  start(src: string) {
-    return src.match(/--/)?.index
-  },
-  tokenizer(this: { lexer: { inlineTokens: (s: string) => Token[] } }, src: string) {
-    const rule = /^--([^-]+)--/
-    const match = rule.exec(src)
-    const text = match?.[1]
-    if (match && text) {
-      return {
-        type: 'markRed',
-        raw: match[0],
-        text,
-        tokens: this.lexer.inlineTokens(text),
-      }
+    if (MARK_COLORS.has(token.color)) {
+      const classAttr = token.color === 'yellow' ? '' : ` class="mark-${token.color}"`
+      return `<mark${classAttr}>${inner}</mark>`
     }
-    return undefined
-  },
-  renderer(this: { parser: { parseInline: (tokens: Token[]) => string } }, token: {
-    tokens: Token[]
-  }) {
-    return `<mark class="mark-red">${this.parser.parseInline(token.tokens)}</mark>`
+
+    if (isSafeCssColor(token.color)) {
+      return `<mark class="mark-custom" style="--mark-custom-bg: ${token.color}">${inner}</mark>`
+    }
+
+    // Неизвестный/небезопасный цвет — тихий фолбэк на дефолтный маркер,
+    // чтобы не терять контент и не пропускать непроверенные значения в style.
+    return `<mark>${inner}</mark>`
   },
 }
 
@@ -355,7 +395,6 @@ marked.use({
   extensions: [
     centeredHeadingExtension,
     markExtension,
-    markRedExtension,
     coloredValueExtension,
     katexBlockExtension,
     katexInlineExtension,
@@ -389,6 +428,16 @@ export function initCopyButtons(root: HTMLElement | Document = document): void {
 const chartInstances = new WeakMap<HTMLCanvasElement, Chart>()
 
 export function initCharts(root: HTMLElement | Document = document): void {
+  const isDark = isDarkVariant()
+
+  const fillColors = isDark
+    ? ['rgba(0, 240, 255, 0.65)', 'rgba(255, 0, 85, 0.65)', 'rgba(255, 230, 0, 0.65)', 'rgba(0, 255, 102, 0.65)', 'rgba(176, 0, 255, 0.65)']
+    : ['rgba(255, 0, 85, 0.75)', 'rgba(0, 163, 173, 0.75)', 'rgba(217, 194, 0, 0.75)', 'rgba(0, 179, 71, 0.75)', 'rgba(138, 0, 204, 0.75)']
+
+  const strokeColors = isDark
+    ? ['#00f0ff', '#ff0055', '#ffe600', '#00ff66', '#b000ff']
+    : ['#ff0055', '#00a3ad', '#d9c200', '#00b347', '#8a00cc']
+
   const canvases = root.querySelectorAll<HTMLCanvasElement>('canvas[data-chart-config]')
 
   canvases.forEach((canvas) => {
@@ -399,13 +448,35 @@ export function initCharts(root: HTMLElement | Document = document): void {
 
     try {
       const config = JSON.parse(raw) as ChartConfiguration
+      config.options = {
+        ...config.options,
+        responsive: true,
+        maintainAspectRatio: false,
+      }
+
+      if (config.data?.datasets) {
+        config.data.datasets.forEach((ds, index) => {
+          const themeColor = strokeColors[index % strokeColors.length]
+          const themeFill = fillColors[index % fillColors.length]
+          const hasCustomColor = Boolean(ds.backgroundColor) || Boolean(ds.borderColor)
+
+          if (!hasCustomColor) {
+            ds.backgroundColor = config.type === 'pie' || config.type === 'doughnut' ? fillColors : themeFill
+            ds.borderColor = themeColor
+          } else {
+            if (!ds.backgroundColor) ds.backgroundColor = ds.borderColor
+            if (!ds.borderColor) ds.borderColor = ds.backgroundColor
+          }
+        })
+      }
+
       const instance = new Chart(canvas, config)
       chartInstances.set(canvas, instance)
     } catch (err) {
       console.error('Failed to render chart:', err)
       const fallback = document.createElement('div')
       fallback.className = 'chart-error'
-      fallback.textContent = 'Invalid chart config'
+      fallback.textContent = '[SYS_CHART_ERROR] :: INVALID_CONFIG'
       canvas.replaceWith(fallback)
     }
   })

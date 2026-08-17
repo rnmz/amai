@@ -26,7 +26,6 @@
 :root {
   --main-font: 'Nunito', 'Noto Sans JP', sans-serif;
 
-  /* === Светлая тема (Light Mode) === */
   --color-bg: #f8fafc;
   --color-text: #0f172a;
   --color-surface: #ffffff;
@@ -79,7 +78,6 @@ html[lang='ja'] {
 }
 
 html[data-theme='dark'] {
-  /* === Тёмная тема (Dark Mode) === */
   --color-bg: #0d1117;
   --color-text: #e6edf3;
   --color-surface: #161b22;

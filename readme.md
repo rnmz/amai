@@ -1,6 +1,6 @@
 # 🌸 Amai
 
-**A lightweight, minimalist blog designed for simplicity.**
+**A lightweight blog designed for simplicity.**
 
 [**View Gallery**](./readme/gallery) | [**Report Bug**](https://github.com/rnmz/amai/issues) | [**Writing Guide**](./docs/)
 
@@ -12,6 +12,16 @@
   * **Extended Post Capabilities:** Built-in math formulas, text markers, zero-dependency footnotes, and interactive code blocks.
   * **High Compatibility:** Extensive support for standard Markdown specifications.
   * **Blazing Fast:** Powered by Go and Vue for optimal performance.
+
+---
+
+## 🎨 Themes
+
+
+  * **Classic:** [Gallery](./readme/gallery/classic/) | [Frontend](./amai-classic/)
+  * **Cyberpunk:** [Gallery](./readme/gallery/cyber/) | [Frontend](./amai-cyber/)
+  * **Y2K / Early Web:** [Gallery](./readme/gallery/y2k/) | [Frontend](./amai-y2k/)
+  * **Neo:** [Gallery](./readme/gallery/neo/) | [Frontend](./amai-neo/)
 
 ---
 
@@ -59,94 +69,9 @@ We currently support the following languages:
 
 ---
 
-## 📋 ToDo list
-- [x] Dark theme
-- [ ] Better design
-- [ ] More frontend themes
+## 📋 ToDo List
+- [x] Custom Frontend Themes (Classic, Cyberpunk, Y2K)
 - [ ] Add more languages (i18n)
 - [ ] Content filters
-- [ ] Setup panel (TUI) & hard way (docker)
+- [ ] Setup panel (TUI) & Docker setup
 - [ ] Advanced layout options for PDF export
-
----
-
-### 🚀 Getting Started
-
-Easy way: WiP
-
----
-
-Hard way (docker): WiP
-
----
-
-Hard way (without docker):
-
-1. **Clone the repo**
-    ```bash
-    git clone https://github.com/rnmz/amai.git
-    ```
-
-2. **Install packages**
-
-    Caddy:
-    ```bash
-    sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https curl
-    curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
-    curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
-    sudo chmod o+r /usr/share/keyrings/caddy-stable-archive-keyring.gpg
-    sudo chmod o+r /etc/apt/sources.list.d/caddy-stable.list
-    sudo apt update
-    sudo apt install caddy
-    ```
-
-    Go (1.26.4):
-    ```bash
-    sudo rm -rf /usr/local/go
-    curl -OL https://go.dev/dl/go1.26.4.linux-amd64.tar.gz
-    sudo tar -C /usr/local -xzf go1.26.4.linux-amd64.tar.gz
-    echo 'export PATH=$PATH:/usr/local/go/bin:$(go env GOPATH)/bin' >> ~/.bashrc
-    source ~/.bashrc
-    ```
-
-    Node (nvm):
-    ```bash
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.6/install.sh | bash
-    ```
-
-3. **Install dependencies**
-    ```bash
-    go mod tidy
-    cd ./amai-frontend
-    npm install
-    ```
-
-4. **Configure your server**
-
-    Create a `.env` file based on `.env.example`:
-    ```bash
-    cp .env.example .env
-    ```
-
-    *Note: All variables are required for the server to start correctly!*
-
-5. **Configure Caddy**
-
-    Point `/etc/caddy/Caddyfile` at your backend (adjust the domain and port to match your `.env`):
-    ```caddyfile
-    your-domain.com {
-        reverse_proxy localhost:443
-    }
-    ```
-    Then reload Caddy:
-    ```bash
-    sudo systemctl reload caddy
-    ```
-
-6. **Build and run**
-    ```bash
-    go build -o amai .
-    ./amai
-    cd ./amai-frontend
-    npm run build
-    ```

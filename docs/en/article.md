@@ -1,16 +1,48 @@
-# Syntax Reference (for Authors)
+# Syntax Guide (for Authors)
 
 ### Basic Formatting
 
 * `**bold text**`
 * `*italic*`
 * `~~strikethrough~~`
-* `==highlighted text==` — green highlight
-* `\- highlighted text -\` — same, but red
+* `{{mark:color text}}` — highlight (background color)
 
-Neither highlight syntax is part of standard Markdown; both are implemented via custom extensions in `marked-render.ts` (`extension mark` / `markRed`). Nested formatting is supported inside both (`==**bold inside highlight**==` works, and `\- **bold inside** -\` works as well).
+The highlight feature is not part of standard Markdown; it is implemented as a custom extension in `marked-render.ts` (`extension mark`). Specify the color immediately after `mark:` with no space before the colon.
 
-Unlike `==...==`, the red highlight safely allows regular hyphens within the text — `\- 5-10% growth per quarter -\` will work correctly because the opening and closing sequences (`\-` and `-\`) are distinct enough not to be confused with a single hyphen. Surrounding spaces are optional (`\-text-\` works too), but including them is recommended for source readability.
+There are two ways to set the color:
+
+**1. Curated Palette** — `yellow`, `red`, `green`, `blue`, `orange`, `purple`. Each has a carefully matched background and text color pair in the stylesheet (for example, `red` matches the text shade of `[neg=...]` in tables). Use these colors when you need semantic highlighting (error, success, warning, etc.):
+
+```markdown
+{{mark:yellow important text}}
+{{mark:red critical value}}
+{{mark:green increased by 12%}}
+
+```
+
+`yellow` is the "default" highlight without an additional CSS class (similar to a classic `<mark>` tag). In the `amai-classic` theme, it renders as a light green shade.
+
+**2. Any Custom CSS Color** — named (`aquamarine`, `tomato`, `cornflowerblue`, etc.) or hex (`#7fffd4`) — whenever you need a color outside the curated palette:
+
+```markdown
+{{mark:aquamarine text}}
+{{mark:#ff9900 text}}
+
+```
+
+⚠️ **Important difference:** Custom colors change **only the background**; the text color remains standard (matching the main paragraph text) as contrast is not automatically adjusted for dark backgrounds. If you pick a color that is too dark or too saturated, the text might become illegible. Stick to light/pastel shades, or rely on the curated palette from option 1 for guaranteed readability.
+
+If an unparsed color is provided (typos, invalid CSS strings, etc.), it silently falls back to the default yellow highlight so that content is never lost.
+
+Nested formatting (bold text, links, and even inline code wrapped in single backticks) is fully supported inside both color methods:
+
+```markdown
+{{mark:red **important**: see `npm run build` and the [documentation](https://example.com)}}
+{{mark:aquamarine supports **bold text** and [links](https://example.com)}}
+
+```
+
+⚠️ **Limitation:** The closing sequence is always the **first** occurrence of `}}` after the opening `{{mark:`. If the inner text contains `}}` (e.g., raw JSON or templates with double curly braces), the highlight will close prematurely. This rarely affects standard post content.
 
 ---
 
@@ -26,21 +58,21 @@ Unlike `==...==`, the red highlight safely allows regular hyphens within the tex
 
 ```
 
-Every heading automatically receives an `id` (slug) and an anchor icon `#` that appears on hover, allowing users to copy a direct link to the section.
+Every heading automatically receives a unique `id` (slug) and an anchor icon `#` on hover, allowing users to copy direct links to sections.
 
-#### Centering
+#### Centered Headings
 
-Placing a `$` before the hash marks aligns the heading to the center instead of the default left edge:
+Prefixing the hash symbols with `$` centers the heading alignment instead of the default left-aligned text:
 
 ```markdown
 # Regular heading — left-aligned
-$## Centered level 2 heading
+$## Centered level-2 heading
 
 ```
 
-Works for all levels (`$#`…`$######`) and supports nested formatting (`**bold**`, `code`, etc.) identically to regular headings.
+This works across all levels (`$#`…`$######`) and supports nested formatting (`**bold**`, `code`, etc.) just like standard headings.
 
-The only difference in rendering is that the anchor icon on centered headings is placed inline before the text rather than absolute-positioned to the left (with centered text, a fixed left offset would shift unpredictably depending on the heading length).
+The only structural difference is that centered headings place the anchor icon inline before the text instead of using absolute positioning on the left side (since absolute left positioning breaks visually depending on heading length).
 
 ---
 
@@ -71,20 +103,20 @@ The only difference in rendering is that the anchor icon on centered headings is
 
 ```markdown
 - [x] completed
-- [ ] incomplete
+- [ ] uncompleted
 
 ```
 
-Checkbox styles are implemented using `:has()` selectors and do not depend on whether `marked` adds `task-list-item` classes — they work in any case.
+Checkbox styles rely on CSS `:has()` selectors and work universally, regardless of whether `marked` appends `task-list-item` classes.
 
 ---
 
 ### Blockquotes
 
 ```markdown
-> quote text
+> Blockquote text
 >
-> second paragraph of the same quote
+> Second paragraph in the same blockquote
 
 ```
 
@@ -94,7 +126,7 @@ Checkbox styles are implemented using `:has()` selectors and do not depend on wh
 
 **Inline:** `code`
 
-**Syntax-highlighted block** (`highlight.js`, auto-detects language if omitted):
+**Syntax-highlighted code block** (`highlight.js`, auto-detects language if omitted):
 
 ```markdown
 ```javascript
@@ -104,11 +136,11 @@ const x = 1;
 
 ```
 
-Every code block automatically receives a language badge and a **Copy** button.
+Each code block automatically displays a language badge alongside a **Copy** button.
 
 ---
 
-### Keyboard Keys
+### Keybindings
 
 ```html
 <kbd>Ctrl</kbd> + <kbd>S</kbd>
@@ -120,57 +152,59 @@ Every code block automatically receives a language badge and a **Copy** button.
 ### Tables
 
 ```markdown
-| Column | Center | Right-aligned |
+| Column | Centered | Right-aligned |
 |:---|:---:|---:|
 | a | b | c |
 
 ```
 
-* Columns aligned to the right automatically use a monospaced font with tabular figures (`font-variant-numeric: tabular-nums`) — convenient for financial data.
-* **Color formatting for positive/negative/neutral values** — short syntax `[pos=...]` / `[neg=...]` / `[neut=...]`:
+* Right-aligned columns automatically use a monospaced font with tabular numbers (`font-variant-numeric: tabular-nums`), optimized for financial data.
+* **Semantic status indicators for positive/negative/neutral values** — shorthand syntax: `[pos=...]` / `[neg=...]` / `[neut=...]`:
 
 ```markdown
-| Asset | Yield |
+| Asset | Returns |
 |:---|---:|
 | Stocks | [pos=+18.4%] |
 | Bonds | [neg=−1.2%] |
-| Deposit | [neut=0.0%] |
+| Savings | [neut=0.0%] |
 
 ```
 
-Works beyond tables as well — in any inline context (paragraphs, lists). The value inside `[]` cannot contain the `]` character.
+This shorthand works inline across all contexts (paragraphs, lists, etc.). Note that values inside `[]` cannot contain a closing bracket `]`.
 
-**Horizontal scroll on mobile:** wide tables will not break the layout or compress columns — instead, a horizontal scrollbar appears inside the table itself. Implemented via `renderer.table` in `marked-render.ts`, which wraps the output in `<div class="table-wrapper">`, alongside `white-space: nowrap` on `th`/`td` in CSS.
+**Mobile Horizontal Scroll:** Wide tables feature an inline container scrollbar rather than compressing column widths or breaking layout responsiveness. This is handled via `renderer.table` in `marked-render.ts`, which wraps table outputs inside a `<div class="table-wrapper">` combined with CSS `white-space: nowrap` on `th`/`td` elements.
 
-Due to `nowrap`, lengthy text content in a cell (not just numbers) will not wrap. This is intended behavior for tables with short values (numbers, categories); if a table requires multi-line text descriptions in a specific column, override `white-space: normal` targetedly for that instance.
+Due to `white-space: nowrap`, text content within cells will not wrap to a new line. While ideal for short numeric or categorical data, you should override this rule locally (`white-space: normal`) for columns containing lengthy multi-line text descriptions.
 
 ---
 
-### Formulas (KaTeX)
+### Math Formulas (KaTeX)
 
-**Inline** — recommended method via `\(...\)`:
+**Inline** — recommended approach using `\(...\)`:
 
 ```markdown
-Formula \(E = mc^2\) right in the text.
+Inline formula \(E = mc^2\) inside a sentence.
 
 ```
 
-**Display (Block)** — via `$$...$$`:
+**Block level** — using `$$...$$`:
 
 ```markdown
-$$NPV = \sum_{t=1}^{n} \frac{CF_t}{(1+r)^t} - C_0$$
+$$
+NPV = \sum_{t=1}^{n} \frac{CF_t}{(1+r)^t} - C_0
+$$
 
 ```
 
-Single `$...$` is also supported (`katexDollarExtension`) with a heuristic: if a dollar sign is immediately followed by a digit, it is treated as a monetary amount (`$100`) rather than a formula and is left untouched. This handles most real-world scenarios (`$CF_t$`, `$x$` are formulas; `$100`, `$1,234` are amounts), though the heuristic is not bulletproof (for instance, a formula starting with a digit like `$2x+1$` will not be recognized).
+Single dollar signs `$...$` are supported (`katexDollarExtension`) using a heuristic: if a number directly follows the opening `$`, it is interpreted as a monetary value (`$100`) rather than a LaTeX expression. This correctly resolves most edge cases (`$CF_t$`, `$x$` render as math; `$100`, `$1,234` render as currency), though edge cases starting math with digits (`$2x+1$`) will not match.
 
-Using `\(...\)` by default is recommended as it carries no such restrictions; `$...$` is available but secondary.
+Prefer `\(...\)` as the default standard to avoid parsing quirks; treat `$...$` as an alternative syntax option.
 
 ---
 
 ### Charts (Chart.js)
 
-A code block with the language set to `chart` (or `chartjs`) containing a Chart.js JSON configuration:
+Create a code block using the language identifier `chart` (or `chartjs`) containing a valid Chart.js JSON configuration:
 
 ```markdown
 ​```chart
@@ -185,79 +219,79 @@ A code block with the language set to `chart` (or `chartjs`) containing a Chart.
 
 ```
 
-The configuration is a raw `ChartConfiguration` object from Chart.js (`type` / `data` / `options`) without any custom wrapper: anything valid in Chart.js itself is valid here. All standard types work — `bar`, `line`, `pie`, `doughnut`, `radar`, `polarArea`, `scatter`, `bubble` — as well as combinations via `options` (stacked bars, mixed datasets, etc.), as `chart.js/auto` is imported with all controllers pre-registered.
+The payload is a standard Chart.js `ChartConfiguration` object (`type` / `data` / `options`). Any native Chart.js configurations work out-of-the-box (`bar`, `line`, `pie`, `doughnut`, `radar`, `polarArea`, `scatter`, `bubble`, stacked bar configurations, mixed dataset types, etc.) as `chart.js/auto` is loaded with all built-in controllers.
 
-**Positioning** — passed as a second parameter via `:` in the block's language tag:
+**Layout and Alignment** — set using a colon `:` modifier on the code block language:
 
 ```markdown
-​```chart:left    → chart on the left, text wraps around on the right
-​```chart:right   → chart on the right, text wraps around on the left
-​```chart:float   → narrow wrapping (280px, "magazine" style for small inline illustrations)
-​```chart:full    → full width, breaks the text column
-​```chart         → no modifier — full-width block element without text wrapping
+​```chart:left    → Floats left; text wraps around the right side
+​```chart:right   → Floats right; text wraps around the left side
+​```chart:float   → Compact float (280px width) for magazine-style inline illustrations
+​```chart:full    → Full-width block element; breaks text columns
+​```chart         → Default block element; full width without text wrapping
 
 ```
 
 ```markdown
-Text before chart...
+Text preceding the chart...
 
 ​```chart:right
 { "type": "line", "data": { ... } }
 ​```
 
-Text after — wraps around the chart automatically via CSS float, requiring no manual `<div>` wrappers.
+Text following the chart automatically wraps around it via CSS float without requiring manual `<div>` wrappers.
 
 ```
 
 **Format Limitations:**
 
-* The config is pure JSON, meaning **functions and callbacks are not supported** (`options.plugins.tooltip.callbacks`, custom scale formatters on `scales.ticks.callback`, etc.) — JSON cannot serialize functions. Only declarative Chart.js configurations are available.
-* If the JSON is invalid or Chart.js fails to initialize, a block with the `chart-error` class displaying "Invalid chart config" is shown, preventing the post itself from breaking.
-* Multiple `chart:left`/`chart:right` blocks placed back-to-back without intervening text will align side-by-side due to float behavior rather than stacking vertically.
-* `chart:full` applies `clear: both`, properly clearing preceding floated charts without requiring manual intervention.
-* In the admin preview, charts re-render with a debounce on input, but only while the "Preview" tab is active. Typing a long post with many charts may cause a slight delay before they appear when switching to preview mode.
+* Configurations must be valid JSON: **functions and callbacks are unsupported** (`options.plugins.tooltip.callbacks`, `scales.ticks.callback`, etc.) because JSON cannot serialize functions. Only declarative configurations are supported.
+* Invalid JSON or initialization failures render a graceful fallback container with class `chart-error` and the message "Invalid chart config", preventing runtime post crashes.
+* Sequential `chart:left`/`chart:right` blocks without intervening text will stack horizontally (standard CSS float behavior).
+* `chart:full` applies `clear: both`, correctly clearing any preceding floated charts.
+* In the admin preview pane, charts re-render with a debounce on every edit while the "Preview" tab is active. Complex posts with numerous charts may experience slight rendering delays during rapid edits.
 
 ---
 
 ### Footnotes
 
 ```markdown
-Text with a footnote[^label].
+Text containing a footnote link[^label].
 
-[^label]: Footnote explanation.
+[^label]: Footnote detailed explanation.
 
 ```
 
-* The label (`label`) can be any unique identifier within the document.
-* Definitions can be placed anywhere in the document; ordinal numbers are assigned sequentially based on where the reference appears in the text.
-* Referencing a label without a corresponding definition leaves `[^label]` as plain text.
-* A definition without a matching reference in the text is silently ignored.
+* Labels are arbitrary strings, but must remain unique within the document context.
+* Definitions can appear anywhere in the file; sequential numbering is resolved by order of appearance in text.
+* Unmatched labels (`[^label]` without a corresponding definition) render as plain text.
+* Unused definitions (without text links) are silently discarded.
 
 ---
 
 ### Disclaimers
 
-Three equivalent syntax options are supported — choose based on convenience.
+Choose from three supported syntax approaches based on preference:
 
-**1. Block syntax via fence** (recommended for standalone warning paragraphs):
+**1. Fenced Block** (recommended for dedicated warning callouts):
 
 ```markdown
 ​```disclaimer
-Disclaimer text.
+Disclaimer callout text.
 ​```
 
 ```
 
-**2. Inline syntax within a sentence** — uses the same prefix inside single backticks:
+**2. Inline Variant** — using backticks with the `disclaimer` prefix:
 
 ```markdown
-Regular text, and here is a `disclaimer important warning` right in the middle of a paragraph.
+Standard paragraph text, with a `disclaimer inline warning callout` embedded inside.
 
 ```
 
-Differs from standard inline code only by the `disclaimer ` prefix (with a trailing space) — a function call like ``disclaimer()`` will not trigger it due to the absence of the space.
+Differentiated from standard inline code by the `disclaimer ` prefix (including trailing space). Standard code snippets like ``disclaimer()`` will not trigger this block as they lack the trailing space.
 
-**3. Raw HTML** — for complete layout control over the block:
+**3. Raw HTML** — for complete layout control:
 
 ```html
 <div class="disclaimer">
@@ -266,7 +300,7 @@ Disclaimer text.
 
 ```
 
-Both new variants (fence and inline) do not parse Markdown inside — text is escaped and output as-is, matching how `marked` handles raw HTML block content. If formatting like `**bold**` or links is required inside a disclaimer, use the raw HTML variant.
+Fenced and inline variants escape inner content and do not parse nested Markdown. If you require **bold text**, links, or other inline styles inside a disclaimer block, use the raw HTML pattern.
 
 ---
 
@@ -281,27 +315,28 @@ Both new variants (fence and inline) do not parse Markdown inside — text is es
 
 ### Raw HTML
 
-Since only admins can publish posts, `marked` does not sanitize HTML — custom `<div>` tags, inline styles, etc., can be inserted directly into `.md` files whenever Markdown capabilities fall short.
+Admin content is not sanitized by `marked` by default. You can embed arbitrary HTML tags (`<div>`, inline CSS, etc.) directly into `.md` files whenever Markdown capabilities fall short.
 
 ---
 
 ## Known Limitations
 
-* **Formulas vs. Dollars:** A single `$...$` is not parsed as a formula if immediately followed by a digit (protecting `$100`, `$1,234`). Consequently, formulas starting with a digit (e.g., `$2x+1$`) are not recognized and require `\(...\)`. Edge cases like `$100$150` (two `$` signs with no space) might theoretically trigger false positives, though this rarely occurs in practice.
-* **Tables and `white-space: nowrap`:** Table cells do not wrap text (enabling reliable horizontal scrolling on mobile instead of column crushing). Tables containing long text descriptions in cells will extend the scroll area rather than wrapping onto multiple lines.
-* **Footnotes inside code blocks:** The `processFootnotes` preprocessor is unaware of ````` block boundaries, meaning literal `[^1]` text inside code examples will still be replaced if matched.
-* **Charts — Declarative config only:** The JSON config in `chart` blocks does not support Chart.js functions/callbacks (custom tooltips, axis formatters, etc.) — only what can be expressed with static data.
-* **Disclaimers (fence/inline) — No nested Markdown:** Text renders as-is without processing `**bold**`, links, etc. Raw HTML is required for rich formatting inside disclaimers.
-* **`:has()` Selectors:** Required for task checkboxes (table wrappers remain unaffected). Supported natively in Chrome, Edge, and Safari; Firefox requires version 121+ (late 2023). On older browser versions, checkboxes will render, but the list item may retain its native bullet point.
-* **Bundle Size:** `highlight.js` is included with full language support (~190 languages), and `chart.js/auto` includes all registered chart types. If bundle weight becomes a priority, consider transitioning to `highlight.js/lib/core` with manual language registration and `chart.js` (without `/auto`) with targeted type registration.
+* **Math Expressions vs. Dollar Signs:** Single dollar signs `$...` followed directly by digits are treated as currency (`$100`, `$1,234`). Math formulas starting with a digit (`$2x+1$`) will not match; use `\(...\)` instead. Adjacent dollar amounts (`$100$150`) may trigger a false positive, though this pattern is rare in practice.
+* **Table Non-Wrapping (`white-space: nowrap`):** Table cells enforce single-line rendering to preserve mobile scroll behavior. Columns containing lengthy prose will widen table bounds rather than wrapping text lines.
+* **Footnotes in Code Blocks:** The `processFootnotes` preprocessor is context-agnostic to backtick fences; literal strings matching `[^1]` inside code blocks will be transformed.
+* **Declarative Charts Only:** Chart JSON parameters cannot process JavaScript functions or dynamic callbacks (custom tooltips, tick formatters, etc.).
+* **Fenced/Inline Disclaimers:** Native Markdown parsing is disabled inside fenced and inline disclaimers. Use raw HTML if rich formatting is required inside a disclaimer.
+* **Custom Highlights Lack Auto-Contrast:** Custom CSS highlight colors (`{{mark:aquamarine text}}`, `#7fffd4`, etc.) alter background colors while preserving default text color. Select light or pastel values to ensure readability, or stick to curated palette keywords (`yellow`, `red`, `green`, `blue`, `orange`, `purple`).
+* **`:has()` CSS Selector Requirements:** Form controls like list checkboxes rely on modern browser CSS support (Chrome/Edge/Safari support this natively; Firefox requires v121+, released late 2023). Older browsers render functional elements, but may retain native bullet points.
+* **Bundle Overhead:** `highlight.js` bundles language definitions (~190 languages) and `chart.js/auto` includes default controllers. Optimize bundle weight by migrating to `highlight.js/lib/core` alongside targeted `chart.js` modular imports if necessary.
 
 ---
 
 ## Extension Points
 
-Future features can be added via the same pattern using `marked.use({ extensions: [...] })` in `marked-render.ts`:
+To introduce additional markup extensions, register custom parsers via `marked.use({ extensions: [...] })` in `marked-render.ts`:
 
-* **Mermaid** — Diagrams and flowcharts (````mermaid` blocks) for sequence diagrams, architecture flows, and structural charts that fall outside Chart.js data types.
-* **Code Line Numbers** — For posts discussing specific lines of code.
-* **Diff Highlighting** — `highlight.js` supports the `diff` language out of the box; rendering styles just need verification.
-* **Functions/Callbacks in Chart Configs** — If custom formatting (e.g., tooltip formatters) becomes necessary, a `chart-preset` system can be introduced to reference predefined `options` stored in code via short keys instead of passing full JSON configs in Markdown.
+* **Mermaid Diagrams** — render flowcharts, sequence diagrams, and architecture maps using ````mermaid` blocks.
+* **Code Line Numbers** — display line numbering for code walkthroughs.
+* **Diff Highlighting** — leverage `highlight.js` native `diff` language parsing with custom diff view styling.
+* **Chart Presets** — define reusable `chart-preset` identifiers containing complex pre-configured JavaScript functions in the codebase, enabling short code block aliases inside Markdown files.
