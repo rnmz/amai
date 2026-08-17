@@ -168,9 +168,6 @@ const markExtension = {
     if (isSafeCssColor(token.color)) {
       return `<mark class="mark-custom" style="--mark-custom-bg: ${token.color}">${inner}</mark>`
     }
-
-    // Неизвестный/небезопасный цвет — тихий фолбэк на дефолтный маркер,
-    // чтобы не терять контент и не пропускать непроверенные значения в style.
     return `<mark>${inner}</mark>`
   },
 }
