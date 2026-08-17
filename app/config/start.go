@@ -3,6 +3,7 @@ package config
 import (
 	"amai/blog/app/auth"
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -141,7 +142,7 @@ func StartServer() {
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	cleanupTicker := time.NewTicker(5 * time.Second)
+	cleanupTicker := time.NewTicker(10 * time.Minute)
 	defer cleanupTicker.Stop()
 
 	cleanupDone := make(chan bool, 1)
@@ -157,10 +158,11 @@ func StartServer() {
 	}()
 
 	go func() {
-		if err := srv.ListenAndServe(); err != nil {
+		slog.Info("[Gin] Server starting...", "port", os.Getenv("BACKEND_PORT"))
+
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			slog.Error("[Gin] ListenAndServe() error", "error msg", err)
 		}
-		slog.Info("[Gin] Server started")
 	}()
 
 	quit := make(chan os.Signal, 1)

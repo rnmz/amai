@@ -1,0 +1,71 @@
+{
+  "nav": {
+    "main": "ホーム",
+    "articles": "記事",
+    "about": "プロフィール",
+    "files": "ファイル",
+
+    "create": "投稿する",
+    "logout": "ログアウト",
+
+    "theme": "テーマ",
+    "lang": "言語"
+  },
+  "common": {
+    "loading": "読み込み中…",
+    "edit": "編集",
+    "cancel": "キャンセル",
+    "delete": "削除"
+  },
+  "not_found": {
+    "title": "ページが見つかりません",
+    "text": "お探しのページは存在しないか、移動された可能性があります。"
+  },
+  "theme": {
+    "light": "ブルー",
+    "dark": "レッド"
+  },
+  "articles": {
+    "published": "公開日",
+    "edited": "更新日"
+  },
+  "login": {
+    "login": "ユーザー名",
+    "password": "パスワード",
+    "enter": "ログイン",
+    "empty": "ユーザー名とパスワードを入力してください",
+    "invalid": "ユーザー名またはパスワードが正しくありません"
+  },
+  "create_article": {
+    "img": "記事のカバー画像",
+    "upload_img": "カバー画像をアップロード",
+    "delete_img": "カバー画像を削除",
+    "preview": "プレビュー",
+    "show_preview": "プレビューを表示",
+    "back_to_edit": "編集に戻る",
+    "hint_title": "記事のタイトルを入力…",
+    "hint_text": "ここに記事の本文を入力してください",
+    "publish": "公開する",
+    "publishing": "公開中…",
+
+    "err_no_title": "記事のタイトルを入力してください",
+    "err_no_text": "記事の本文を入力してください",
+    "err_no_img": "カバー画像を追加してください",
+    "err_img_upload": "カバー画像のアップロードに失敗しました",
+    "err_save": "記事の保存に失敗しました"
+  },
+  "files": {
+    "upload": "アップロード中…",
+    "add_file": "ファイルを追加",
+    "copy_link": "リンクをコピー",
+    "link_copied": "リンクをコピーしました",
+
+    "err_copy": "リンクのコピーに失敗しました: "
+  },
+  "article": {
+    "no_articles": "まだ記事がありません",
+    "delete": "この記事を削除してもよろしいですか？",
+
+    "err_delete": "記事の削除に失敗しました"
+  }
+}

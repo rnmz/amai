@@ -24,21 +24,21 @@ type sessionStruct struct {
 var sessions sync.Map
 var sessionTTL = 24 * time.Hour
 
-type AuthError struct {
+type ErrorAuth struct {
 	ErrorType    string
 	ErrorMessage string
 }
 
 const (
-	AuthErrorBasicAuthNotValid       = "NOT VALID"
-	AuthErrorAdminCredentialsInvalid = "ADMIN CREDENTIALS IS INVALID"
+	ErrorBasicAuthNotValid       = "NOT VALID"
+	ErrorAdminCredentialsInvalid = "ADMIN CREDENTIALS IS INVALID"
 
-	AuthErrorCookieInvalid   = "COOKIE INVALID"
-	AuthErrorCookieNotExists = "COOKIE NOT EXISTS"
-	AuthErrorCookieExpired   = "COOKIE EXPIRED"
+	ErrorCookieInvalid   = "COOKIE INVALID"
+	ErrorCookieNotExists = "COOKIE NOT EXISTS"
+	ErrorCookieExpired   = "COOKIE EXPIRED"
 )
 
-func (e *AuthError) Error() string {
+func (e *ErrorAuth) Error() string {
 	return fmt.Sprintf("%s: %s", e.ErrorType, e.ErrorMessage)
 }
 
@@ -47,18 +47,18 @@ func CheckCookieAuth(c *gin.Context) error {
 
 	if err != nil {
 		slog.Warn("[Cookie] Cookie not found or invalid")
-		return &AuthError{ErrorType: AuthErrorCookieInvalid, ErrorMessage: "Cookie not found or invalid"}
+		return &ErrorAuth{ErrorType: ErrorCookieInvalid, ErrorMessage: "Cookie not found or invalid"}
 	}
 
 	if sessionId == "" {
 		slog.Warn("[Cookie] Empty session id")
-		return &AuthError{ErrorType: AuthErrorCookieInvalid, ErrorMessage: "Empty sessionId"}
+		return &ErrorAuth{ErrorType: ErrorCookieInvalid, ErrorMessage: "Empty sessionId"}
 	}
 
 	val, exists := sessions.Load(sessionId)
 	if !exists {
 		slog.Warn("[Cookie] Session doesn't exists")
-		return &AuthError{ErrorType: AuthErrorCookieNotExists, ErrorMessage: "No found"}
+		return &ErrorAuth{ErrorType: ErrorCookieNotExists, ErrorMessage: "No found"}
 	}
 
 	session := val.(sessionStruct)
@@ -66,7 +66,7 @@ func CheckCookieAuth(c *gin.Context) error {
 	if time.Now().After(session.Expires) {
 		sessions.Delete(sessionId)
 		slog.Warn("[Cookie] Session expired", "sessionId", sessionId)
-		return &AuthError{ErrorType: AuthErrorCookieExpired, ErrorMessage: "Expired"}
+		return &ErrorAuth{ErrorType: ErrorCookieExpired, ErrorMessage: "Expired"}
 	}
 
 	currTime := time.Now()
@@ -98,21 +98,21 @@ func Login(c *gin.Context) error {
 	user, pass, ok := c.Request.BasicAuth()
 	if !ok {
 		slog.Warn("[Auth] Basic auth header missing or malformed")
-		return &AuthError{ErrorType: AuthErrorBasicAuthNotValid, ErrorMessage: "Invalid basic auth header"}
+		return &ErrorAuth{ErrorType: ErrorBasicAuthNotValid, ErrorMessage: "Invalid basic auth header"}
 	}
 
 	validUser := os.Getenv("ADMIN_LOGIN")
 	validPass := os.Getenv("ADMIN_PASSWORD")
 	if validUser == "" || validPass == "" {
 		slog.Error("[Auth] Admin credentials are not set in environment variables")
-		return &AuthError{ErrorType: AuthErrorAdminCredentialsInvalid, ErrorMessage: "Internal server configuration error"}
+		return &ErrorAuth{ErrorType: ErrorAdminCredentialsInvalid, ErrorMessage: "Internal server configuration error"}
 	}
 
 	userValid := subtle.ConstantTimeCompare([]byte(user), []byte(validUser)) == 1
 	passValid := subtle.ConstantTimeCompare([]byte(pass), []byte(validPass)) == 1
 	if !userValid || !passValid {
 		slog.Warn("[Auth] Invalid login credentials attempt", "username", user)
-		return &AuthError{ErrorType: AuthErrorBasicAuthNotValid, ErrorMessage: "Invalid username or password"}
+		return &ErrorAuth{ErrorType: ErrorBasicAuthNotValid, ErrorMessage: "Invalid username or password"}
 	}
 
 	sessionId := generateSessionID()
@@ -149,18 +149,18 @@ func Logout(c *gin.Context) error {
 	sessionId, err := c.Cookie("sessionId")
 	if err != nil {
 		slog.Warn("[Cookie] Logout attempted without sessionId cookie")
-		return &AuthError{ErrorType: AuthErrorCookieNotExists}
+		return &ErrorAuth{ErrorType: ErrorCookieNotExists}
 	}
 
 	if sessionId == "" {
 		slog.Warn("[Cookie] Logout attempted with empty sessionId cookie")
-		return &AuthError{ErrorType: AuthErrorCookieInvalid}
+		return &ErrorAuth{ErrorType: ErrorCookieInvalid}
 	}
 
 	_, exists := sessions.Load(sessionId)
 	if !exists {
 		slog.Warn("[Session] Logout attempted for non-existent or expired session", "sessionId", sessionId)
-		return &AuthError{ErrorType: AuthErrorCookieNotExists}
+		return &ErrorAuth{ErrorType: ErrorCookieNotExists}
 	}
 
 	sessions.Delete(sessionId)

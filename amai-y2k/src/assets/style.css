@@ -1,0 +1,203 @@
+.container {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding-left: 20px;
+  padding-right: 20px;
+  box-sizing: border-box;
+}
+
+@font-face {
+  font-family: 'NotoSans';
+  src: url('@/assets/font/NotoSans.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Ubuntu';
+  src: url('@/assets/font/Ubuntu.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --main-font: 'Ubuntu', 'NotoSans', system-ui, sans-serif;
+
+  --color-bg: #f3f4f6;
+  --color-text: #1f2937;
+  --color-surface: #ffffff;
+  --color-border: #d1d5db;
+
+  --md-text: #111827;
+  --md-text-secondary: #6b7280;
+  --md-link: #0284c7;
+  --md-link-hover: #0369a1;
+  --md-accent: #2563eb;
+
+  --md-border: #d1d5db;
+  --md-border-light: #e5e7eb;
+
+  --md-bg-code: #f8fafc;
+  --md-bg-pre: #f1f5f9;
+  --md-bg-table-header: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+  --md-table-header-text: #ffffff;
+  --md-bg-table-row-alt: #f8fafc;
+  --md-bg-table-row-hover: #e0f2fe;
+  --md-bg-code-header: #e2e8f0;
+  --md-border-code-header: #cbd5e1;
+  --md-bg-blockquote: #fefce8;
+  --md-bg-disclaimer: #fff7ed;
+  --md-bg-disclaimer-inline: #ffedd5;
+  --md-text-disclaimer-inline: #c2410c;
+
+  --md-checkbox-border: #0284c7;
+  --md-checkbox-bg: #ffffff;
+  --md-checkbox-checked: #0284c7;
+  --md-checkbox-check: #ffffff;
+
+  --md-scrollbar-thumb: #cbd5e1;
+  --md-scrollbar-thumb-hover: #94a3b8;
+
+  --md-selection-bg: #bae6fd;
+  --md-selection-text: #0f172a;
+
+  --md-num-positive: #16a34a;
+  --md-num-negative: #dc2626;
+  --md-num-neutral: #ca8a04;
+
+  --md-chart-error: #dc2626;
+  --md-mark-bg: #fef08a;
+  --md-mark-red-bg: #fecaca;
+
+  /* button (copy-button) gradient */
+  --md-btn-bg-start: #ffffff;
+  --md-btn-bg-end: #f1f5f9;
+  --md-btn-bg-hover-start: #ffffff;
+  --md-btn-bg-hover-end: #e2e8f0;
+
+  /* kbd gradient */
+  --md-kbd-bg-start: #ffffff;
+  --md-kbd-bg-end: #f1f5f9;
+
+  /* generic shadow tint used across cards/buttons/kbd */
+  --md-shadow-color: rgba(0, 0, 0, 0.1);
+
+  color-scheme: light;
+}
+
+html[lang='ja'] {
+  --main-font: 'NotoSans', 'Ubuntu', sans-serif;
+}
+
+html[data-theme='dark'] {
+  --color-bg: #1e222b;
+  --color-text: #e2e8f0;
+  --color-surface: #282d39;
+  --color-border: #3d4455;
+
+  --md-text: #f1f5f9;
+  --md-text-secondary: #94a3b8;
+  --md-link: #38bdf8;
+  --md-link-hover: #7dd3fc;
+  --md-accent: #0284c7;
+
+  --md-border: #3d4455;
+  --md-border-light: #2d3342;
+
+  --md-bg-code: #212631;
+  --md-bg-pre: #181b22;
+  --md-bg-table-header: linear-gradient(180deg, #0284c7 0%, #0369a1 100%);
+  --md-table-header-text: #ffffff;
+  --md-bg-table-row-alt: rgba(255, 255, 255, 0.02);
+  --md-bg-table-row-hover: rgba(56, 189, 248, 0.12);
+  --md-bg-code-header: #212631;
+  --md-border-code-header: #0284c7;
+  --md-bg-blockquote: rgba(2, 132, 199, 0.12);
+  --md-bg-disclaimer: rgba(234, 88, 12, 0.12);
+  --md-bg-disclaimer-inline: rgba(234, 88, 12, 0.2);
+  --md-text-disclaimer-inline: #ffedd5;
+
+  --md-checkbox-border: #38bdf8;
+  --md-checkbox-bg: #181b22;
+  --md-checkbox-checked: #0284c7;
+  --md-checkbox-check: #ffffff;
+
+  --md-scrollbar-thumb: #0284c7;
+  --md-scrollbar-thumb-hover: #38bdf8;
+
+  --md-selection-bg: #0284c7;
+  --md-selection-text: #ffffff;
+
+  --md-num-positive: #22c55e;
+  --md-num-negative: #ef4444;
+  --md-num-neutral: #eab308;
+
+  --md-chart-error: #ef4444;
+  --md-mark-bg: rgba(234, 179, 8, 0.25);
+  --md-mark-red-bg: rgba(239, 68, 68, 0.25);
+
+  /* button (copy-button) gradient — dark surfaces instead of white */
+  --md-btn-bg-start: #2a2f3a;
+  --md-btn-bg-end: #1f232c;
+  --md-btn-bg-hover-start: #333947;
+  --md-btn-bg-hover-end: #262b35;
+
+  /* kbd gradient */
+  --md-kbd-bg-start: #2a2f3a;
+  --md-kbd-bg-end: #1f232c;
+
+  /* shadows need to be lighter/more opaque to read on dark surfaces */
+  --md-shadow-color: rgba(0, 0, 0, 0.4);
+
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--main-font);
+  background-color: var(--color-bg);
+  color: var(--md-text);
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(0, 0, 0, 0.03),
+    rgba(0, 0, 0, 0.03) 2px,
+    transparent 2px,
+    transparent 8px
+  );
+  transition: background-color 0.2s ease, color 0.2s ease;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+  border-left: 1px solid var(--md-border-light);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--md-scrollbar-thumb);
+  border: 2px solid var(--color-bg);
+  border-radius: 4px;
+  box-shadow: inset 1px 1px 0px rgba(255, 255, 255, 0.6);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--md-scrollbar-thumb-hover);
+}
+
+.content-container {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 20px 20px 20px;
+  box-sizing: border-box;
+  position: relative;
+}

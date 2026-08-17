@@ -24,7 +24,8 @@ If applicable, add screenshots to help explain your problem.
 
 **Server (please complete the following information):**
  - OS: [e.g. Ubuntu linux]
- - Blog version [e.g. 22]
+ - Blog version: [e.g. 22]
+ - Theme: [e.g. amai-neo]
 
 **Additional context**
 Add any other context about the problem here.
