@@ -145,7 +145,52 @@ func rateLimit() gin.HandlerFunc {
 		mut.Unlock()
 
 		if !cl.limiter.Allow() {
-			ctx.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"message": "rate limit exceeded. 5 req/sec only"})
+			ctx.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"message": "rate limit exceeded. 30 req/sec only"})
+			return
+		}
+		ctx.Next()
+	}
+}
+
+func authRateLimit() gin.HandlerFunc {
+	type client struct {
+		limiter  *rate.Limiter
+		lastSeen time.Time
+	}
+
+	var (
+		mut     sync.Mutex
+		clients = make(map[string]*client)
+	)
+
+	go func() {
+		ticker := time.NewTicker(time.Minute)
+		defer ticker.Stop()
+		for range ticker.C {
+			mut.Lock()
+			for ip, cl := range clients {
+				if time.Since(cl.lastSeen) > 3*time.Minute {
+					delete(clients, ip)
+				}
+			}
+			mut.Unlock()
+		}
+	}()
+
+	return func(ctx *gin.Context) {
+		ip := ctx.ClientIP()
+
+		mut.Lock()
+		cl, exists := clients[ip]
+		if !exists {
+			cl = &client{limiter: rate.NewLimiter(1, 1)}
+			clients[ip] = cl
+		}
+		cl.lastSeen = time.Now()
+		mut.Unlock()
+
+		if !cl.limiter.Allow() {
+			ctx.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"message": "rate limit exceeded. 1 req/sec only"})
 			return
 		}
 		ctx.Next()

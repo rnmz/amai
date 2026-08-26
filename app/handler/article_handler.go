@@ -11,7 +11,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type PostJSON struct {
+type ArticleJSON struct {
 	Id      uuid.UUID  `json:"id"`
 	Title   string     `json:"title" binding:"required"`
 	Poster  uuid.UUID  `json:"poster_id" binding:"required"`
@@ -20,8 +20,8 @@ type PostJSON struct {
 	Body    string     `json:"body" binding:"required"`
 }
 
-func parseRawPost(post data.PostEntity) PostJSON {
-	result := PostJSON{
+func parseRawArticle(post data.ArticleEntity) ArticleJSON {
+	result := ArticleJSON{
 		Id:      post.Id,
 		Title:   post.Title,
 		Poster:  post.Poster,
@@ -37,7 +37,7 @@ func parseRawPost(post data.PostEntity) PostJSON {
 	return result
 }
 
-func PostGetById(c *gin.Context) {
+func ArticleGetById(c *gin.Context) {
 	db := c.MustGet("db").(*sqlx.DB)
 
 	queryId := c.Query("id")
@@ -52,18 +52,18 @@ func PostGetById(c *gin.Context) {
 		return
 	}
 
-	rawPost, dataErr := data.GetPostById(db, c.Request.Context(), id)
+	rawPost, dataErr := data.GetArticleById(db, c.Request.Context(), id)
 	if dataErr != nil {
 		c.Error(dataErr)
 		c.Abort()
 		return
 	}
 
-	post := parseRawPost(rawPost)
+	post := parseRawArticle(rawPost)
 	c.JSON(http.StatusOK, post)
 }
 
-func PostGetAll(c *gin.Context) {
+func ArticleGetAll(c *gin.Context) {
 	db := c.MustGet("db").(*sqlx.DB)
 
 	pageQuery := c.Query("page")
@@ -82,7 +82,7 @@ func PostGetAll(c *gin.Context) {
 		return
 	}
 
-	pages, pagesErr := data.GetAllPagesPost(db, c.Request.Context())
+	pages, pagesErr := data.GetAllPagesArticles(db, c.Request.Context())
 	if pagesErr != nil {
 		c.Error(pagesErr)
 		c.Abort()
@@ -94,31 +94,31 @@ func PostGetAll(c *gin.Context) {
 		return
 	}
 
-	rawPosts, postsErr := data.GetAllPosts(db, c.Request.Context(), page)
+	rawPosts, postsErr := data.GetAllArticles(db, c.Request.Context(), page)
 	if postsErr != nil {
 		c.Error(postsErr)
 		c.Abort()
 		return
 	}
 
-	var posts []PostJSON
+	var posts []ArticleJSON
 	for _, e := range rawPosts {
-		posts = append(posts, parseRawPost(e))
+		posts = append(posts, parseRawArticle(e))
 	}
 
 	c.JSON(http.StatusOK, gin.H{"posts": posts, "pages": pages})
 }
 
-func PostCreate(c *gin.Context) {
+func ArticleCreate(c *gin.Context) {
 	db := c.MustGet("db").(*sqlx.DB)
-	var postJson PostJSON
+	var postJson ArticleJSON
 
 	if err := c.ShouldBindJSON(&postJson); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "invalid JSON body"})
 		return
 	}
 
-	err := data.AddPost(db, c.Request.Context(), data.PostEntity{
+	err := data.AddArticle(db, c.Request.Context(), data.ArticleEntity{
 		Title:  postJson.Title,
 		Poster: postJson.Poster,
 		Body:   postJson.Body,
@@ -132,9 +132,9 @@ func PostCreate(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "post created"})
 }
 
-func PostEdit(c *gin.Context) {
+func ArticleEdit(c *gin.Context) {
 	db := c.MustGet("db").(*sqlx.DB)
-	var postJson PostJSON
+	var postJson ArticleJSON
 
 	if err := c.ShouldBindJSON(&postJson); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "invalid JSON body"})
@@ -145,7 +145,7 @@ func PostEdit(c *gin.Context) {
 		return
 	}
 
-	err := data.EditPost(db, c.Request.Context(), data.PostEntity{
+	err := data.EditArticle(db, c.Request.Context(), data.ArticleEntity{
 		Id:     postJson.Id,
 		Title:  postJson.Title,
 		Poster: postJson.Poster,
@@ -160,7 +160,7 @@ func PostEdit(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "post edited"})
 }
 
-func PostDelete(c *gin.Context) {
+func ArticleDelete(c *gin.Context) {
 	db := c.MustGet("db").(*sqlx.DB)
 
 	queryId := c.Query("id")
@@ -175,7 +175,7 @@ func PostDelete(c *gin.Context) {
 		return
 	}
 
-	err := data.DeletePost(db, c.Request.Context(), id)
+	err := data.DeleteArticle(db, c.Request.Context(), id)
 	if err != nil {
 		c.Error(err)
 		c.Abort()

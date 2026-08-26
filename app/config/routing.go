@@ -10,11 +10,11 @@ import (
 func Routing(e *gin.Engine) {
 	user := e.Group("/")
 	{
-		user.GET("/post/get", handler.PostGetById)
-		user.GET("/post/all", handler.PostGetAll)
+		user.GET("/post/get", handler.ArticleGetById)
+		user.GET("/post/all", handler.ArticleGetAll)
 		user.GET("/file/get", handler.FileGet)
 
-		user.POST("/auth/login", handler.AuthLogin)
+		user.POST("/auth/login", authRateLimit(), handler.AuthLogin)
 		user.POST("/auth/logout", handler.AuthLogout)
 
 		user.GET("/health", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"message": "alive"}) })
@@ -23,9 +23,9 @@ func Routing(e *gin.Engine) {
 	admin := e.Group("/admin/")
 	admin.Use(authMiddleware())
 	{
-		admin.POST("/post/create", handler.PostCreate)
-		admin.PUT("/post/edit", handler.PostEdit)
-		admin.DELETE("/post/delete", handler.PostDelete)
+		admin.POST("/post/create", handler.ArticleCreate)
+		admin.PUT("/post/edit", handler.ArticleEdit)
+		admin.DELETE("/post/delete", handler.ArticleDelete)
 
 		admin.GET("/file/list", handler.GetFilesList)
 		admin.POST("/file/upload", handler.FileUpload)

@@ -76,12 +76,16 @@ func GetFileById(db *sqlx.DB, ctx context.Context, id uuid.UUID) (string, error)
 func UploadFile(db *sqlx.DB, file io.Reader, ext string) (string, error) {
 	path := os.Getenv("FILE_PATH")
 	generatedFileName := uuid.NewString()
+	filePath := filepath.Join(path, generatedFileName+ext)
 
 	slog.Info("[Storage] Uploading new file", "fileId", generatedFileName)
 
-	filePath := filepath.Join(path, generatedFileName+ext)
-	dst, fileErr := os.Create(filePath)
+	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
+		slog.Error("[Storage] Failed to create directory", "path", path, "error", err)
+		return "", err
+	}
 
+	dst, fileErr := os.Create(filePath)
 	if fileErr != nil {
 		slog.Error("[Storage] Failed to create file on disk", "error", fileErr)
 		return "", fileErr
@@ -116,7 +120,7 @@ func DeleteFile(db *sqlx.DB, ctx context.Context, id uuid.UUID) error {
 
 	tx, txErr := db.BeginTxx(ctx, nil)
 	if txErr != nil {
-		slog.Error("[Transaction] Failed to start transaction", "error", txErr)
+		slog.Error("[DB] Failed to start transaction", "error", txErr)
 		return txErr
 	}
 	defer tx.Rollback()
@@ -148,7 +152,7 @@ func DeleteFile(db *sqlx.DB, ctx context.Context, id uuid.UUID) error {
 	}
 
 	if commitErr := tx.Commit(); commitErr != nil {
-		slog.Error("[Transaction] Failed to commit transaction", "error", commitErr)
+		slog.Error("[DB] Failed to commit transaction", "error", commitErr)
 		return commitErr
 	}
 
