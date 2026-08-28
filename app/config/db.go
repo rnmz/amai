@@ -23,8 +23,8 @@ func initSqlTables(db *sqlx.DB) {
 		panic(fmt.Errorf("init table files failed: %v", filesTableErr))
 	}
 
-	if _, postTableErr := tx.Exec(`
-	CREATE TABLE IF NOT EXISTS posts (
+	if _, articlesTableErr := tx.Exec(`
+	CREATE TABLE IF NOT EXISTS articles (
 		id      UUID PRIMARY KEY,
 		title   TEXT NOT NULL,
 		poster  TEXT NOT NULL,
@@ -32,9 +32,9 @@ func initSqlTables(db *sqlx.DB) {
 		updated TIMESTAMP WITH TIME ZONE NOT NULL,
 		body    TEXT NOT NULL
 	);
-	`); postTableErr != nil {
-		slog.Error("[DB] Init table posts failed", "error", postTableErr)
-		panic(fmt.Errorf("init table posts failed: %v", postTableErr))
+	`); articlesTableErr != nil {
+		slog.Error("[DB] Init table articles failed", "error", articlesTableErr)
+		panic(fmt.Errorf("init table articles failed: %v", articlesTableErr))
 	}
 
 	tx.Commit()
