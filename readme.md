@@ -9,7 +9,7 @@
 ## ✨ Features
 
   * **Markdown First:** Write your content in Markdown and let Amai handle the rendering.
-  * **Extended Post Capabilities:** Built-in math formulas, text markers, zero-dependency footnotes, and interactive code blocks.
+  * **Extended Articles Capabilities:** Built-in math formulas, text markers, zero-dependency footnotes, and interactive code blocks.
   * **High Compatibility:** Extensive support for standard Markdown specifications.
   * **Blazing Fast:** Powered by Go and Vue for optimal performance.
 
@@ -40,7 +40,7 @@ Amai is built using a robust and modern set of tools:
 
 ---
 
-## 📝 Markdown & Post Features
+## 📝 Markdown & Articles Features
 
 Amai ensures consistent formatting across standard specs while offering custom enhancements for rich content creation. Check out the [**Writing Guide**](./docs/) for a full example of what you can do in a post.
 

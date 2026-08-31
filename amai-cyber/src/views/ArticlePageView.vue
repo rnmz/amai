@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { marked, initCopyButtons, processFootnotes, initCharts } from '@/utils/marked-render'
-import { usePostStore, usePostsStore } from '@/stores/posts'
+import { usePostStore, usePostsStore } from '../stores/articles'
 import { useFilesStore } from '@/stores/files'
 import { useI18n } from 'vue-i18n'
 
@@ -154,11 +154,11 @@ async function onDelete() {
   border: 1px solid var(--md-border-light);
   padding: 32px;
   clip-path: polygon(
-    0 0, 
-    calc(100% - 20px) 0, 
-    100% 20px, 
-    100% 100%, 
-    20px 100%, 
+    0 0,
+    calc(100% - 20px) 0,
+    100% 20px,
+    100% 100%,
+    20px 100%,
     0 calc(100% - 20px)
   );
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);

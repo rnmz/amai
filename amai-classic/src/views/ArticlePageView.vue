@@ -2,14 +2,14 @@
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { marked, initCopyButtons, processFootnotes, initCharts } from '@/utils/marked-render'
-import { usePostStore, usePostsStore } from '@/stores/posts'
+import { useArticleStore, useArticlesStore } from '@/stores/articles'
 import { useFilesStore } from '@/stores/files'
 import { useI18n } from 'vue-i18n'
 
 const route = useRoute()
 const router = useRouter()
-const postStore = usePostStore()
-const postsStore = usePostsStore()
+const articleStore = useArticleStore()
+const articlesStore = useArticlesStore()
 const filesStore = useFilesStore()
 
 const { t } = useI18n()
@@ -21,16 +21,16 @@ marked.setOptions({
 })
 
 const parsedContent = computed(() => {
-  if (!postStore.post?.body) return ''
-  return marked.parse(processFootnotes(postStore.post.body))
+  if (!articleStore.article?.body) return ''
+  return marked.parse(processFootnotes(articleStore.article.body))
 })
 
 const contentRef = useTemplateRef<HTMLElement>('contentRef')
 
 const deleteErrorMessage = ref<string | null>(null)
 
-async function loadPost(id: string) {
-  await postStore.fetchPost(id)
+async function loadArticle(id: string) {
+  await articleStore.fetchArticle(id)
   if (contentRef.value) {
     initCopyButtons(contentRef.value)
     initCharts(contentRef.value)
@@ -39,49 +39,49 @@ async function loadPost(id: string) {
 
 onMounted(() => {
   const id = route.params.id as string
-  if (id) loadPost(id)
+  if (id) loadArticle(id)
 })
 
 watch(
   () => route.params.id,
   (newId) => {
-    if (newId) loadPost(newId as string)
+    if (newId) loadArticle(newId as string)
   }
 )
 
 function onEdit() {
-  if (!postStore.post) return
-  router.push({ name: 'admin_create_article', query: { editId: postStore.post.id } })
+  if (!articleStore.article) return
+  router.push({ name: 'admin_create_article', query: { editId: articleStore.article.id } })
 }
 
 async function onDelete() {
-  if (!postStore.post) return
+  if (!articleStore.article) return
 
   const isConfirmed = confirm(t('article.delete'))
   if (!isConfirmed) return
 
   deleteErrorMessage.value = null
 
-  const success = await postsStore.remove(postStore.post.id)
+  const success = await articlesStore.remove(articleStore.article.id)
   if (success) {
     router.push({ name: 'admin_articles' })
   } else {
-    deleteErrorMessage.value = postsStore.error ?? t('article.err_delete')
+    deleteErrorMessage.value = articlesStore.error ?? t('article.err_delete')
   }
 }
 </script>
 
 <template>
   <div class="post-page container">
-    <div v-if="postStore.isLoading" class="loading-state">{{ t('common.loading') }}</div>
-    <div v-else-if="postStore.error" class="error-state">{{ postStore.error }}</div>
+    <div v-if="articleStore.isLoading" class="loading-state">{{ t('common.loading') }}</div>
+    <div v-else-if="articleStore.error" class="error-state">{{ articleStore.error }}</div>
 
-    <article v-else-if="postStore.post">
+    <article v-else-if="articleStore.article">
       <header class="post-header">
         <div class="header-top">
           <div v-if="isAdmin" class="header-spacer"></div>
 
-          <h1 class="post-title">{{ postStore.post.title }}</h1>
+          <h1 class="post-title">{{ articleStore.article.title }}</h1>
 
           <div v-if="isAdmin" class="admin-actions">
             <button class="action-btn edit-btn" :title="t('common.edit')" @click="onEdit">
@@ -98,11 +98,11 @@ async function onDelete() {
           </div>
         </div>
 
-        <div v-if="postStore.post.poster_id" class="post-hero">
+        <div v-if="articleStore.article.poster_id" class="post-hero">
           <img
             class="post-hero-image"
-            :src="filesStore.getFileUrl(postStore.post.poster_id)"
-            :alt="postStore.post.title"
+            :src="filesStore.getFileUrl(articleStore.article.poster_id)"
+            :alt="articleStore.article.title"
           />
         </div>
       </header>

@@ -1,30 +1,30 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import {
-  getPost,
-  getPosts,
-  createPost,
-  editPost,
-  deletePost,
-  type Post,
-  type CreatePostPayload,
-  type EditPostPayload,
-} from "@/api/post";
+  getArticle,
+  getArticles,
+  createArticle,
+  editArticle,
+  deleteArticle,
+  type Article,
+  type CreateArticlePayload,
+  type EditArticlePayload,
+} from "@/api/articles.ts";
 import { getApiErrorMessage } from "@/api/client";
 
-export const usePostsStore = defineStore("posts", () => {
-  const posts = ref<Post[]>([]);
+export const useArticlesStore = defineStore("articles", () => {
+  const articles = ref<Article[]>([]);
   const pages = ref(0);
   const currentPage = ref(1);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
 
-  async function fetchPosts(page = currentPage.value): Promise<void> {
+  async function fetchArticles(page = currentPage.value): Promise<void> {
     isLoading.value = true;
     error.value = null;
     try {
-      const data = await getPosts(page);
-      posts.value = data.posts;
+      const data = await getArticles(page);
+      articles.value = data.articles;
       pages.value = data.pages;
       currentPage.value = page;
     } catch (e) {
@@ -34,11 +34,11 @@ export const usePostsStore = defineStore("posts", () => {
     }
   }
 
-  async function create(payload: CreatePostPayload): Promise<boolean> {
+  async function create(payload: CreateArticlePayload): Promise<boolean> {
     isLoading.value = true;
     error.value = null;
     try {
-      await createPost(payload);
+      await createArticle(payload);
       return true;
     } catch (e) {
       error.value = getApiErrorMessage(e, "Failed to create article");
@@ -48,15 +48,15 @@ export const usePostsStore = defineStore("posts", () => {
     }
   }
 
-  async function update(payload: EditPostPayload): Promise<boolean> {
+  async function update(payload: EditArticlePayload): Promise<boolean> {
     isLoading.value = true;
     error.value = null;
     try {
-      await editPost(payload);
-      const idx = posts.value.findIndex((p) => p.id === payload.id);
-      const existing = idx !== -1 ? posts.value[idx] : undefined;
+      await editArticle(payload);
+      const idx = articles.value.findIndex((a) => a.id === payload.id);
+      const existing = idx !== -1 ? articles.value[idx] : undefined;
       if (existing) {
-        posts.value[idx] = { ...existing, ...payload };
+        articles.value[idx] = { ...existing, ...payload };
       }
       return true;
     } catch (e) {
@@ -71,8 +71,8 @@ export const usePostsStore = defineStore("posts", () => {
     isLoading.value = true;
     error.value = null;
     try {
-      await deletePost(id);
-      posts.value = posts.value.filter((p) => p.id !== id);
+      await deleteArticle(id);
+      articles.value = articles.value.filter((a) => a.id !== id);
       return true;
     } catch (e) {
       error.value = getApiErrorMessage(e, "Failed to delete article");
@@ -83,35 +83,35 @@ export const usePostsStore = defineStore("posts", () => {
   }
 
   return {
-    posts,
+    articles,
     pages,
     currentPage,
     isLoading,
     error,
-    fetchPosts,
+    fetchArticles,
     create,
     update,
     remove,
   };
 });
 
-export const usePostStore = defineStore("post", () => {
-  const post = ref<Post | null>(null);
+export const useArticleStore = defineStore("article", () => {
+  const article = ref<Article | null>(null);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
 
-  async function fetchPost(id: string): Promise<void> {
+  async function fetchArticle(id: string): Promise<void> {
     isLoading.value = true;
     error.value = null;
     try {
-      post.value = await getPost(id);
+      article.value = await getArticle(id);
     } catch (e) {
-      error.value = getApiErrorMessage(e, "Article not found");
-      post.value = null;
+      error.value = getApiErrorMessage(e, "Articles not found");
+      article.value = null;
     } finally {
       isLoading.value = false;
     }
   }
 
-  return { post, isLoading, error, fetchPost };
+  return { article, isLoading, error, fetchArticle };
 });

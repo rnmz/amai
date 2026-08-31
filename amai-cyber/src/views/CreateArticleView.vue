@@ -3,7 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef, wa
 import { useRoute, useRouter } from 'vue-router'
 import { marked, initCopyButtons, initCharts, processFootnotes } from '@/utils/marked-render'
 import { useFilesStore } from '@/stores/files'
-import { usePostsStore, usePostStore } from '@/stores/posts'
+import { usePostsStore, usePostStore } from '../stores/articles'
 import { useI18n } from 'vue-i18n'
 
 const route = useRoute()

@@ -10,8 +10,8 @@ import (
 func Routing(e *gin.Engine) {
 	user := e.Group("/")
 	{
-		user.GET("/post/get", handler.ArticleGetById)
-		user.GET("/post/all", handler.ArticleGetAll)
+		user.GET("/article/get", handler.ArticleGetById)
+		user.GET("/article/all", handler.ArticleGetAll)
 		user.GET("/file/get", handler.FileGet)
 
 		user.POST("/auth/login", authRateLimit(), handler.AuthLogin)
@@ -23,9 +23,9 @@ func Routing(e *gin.Engine) {
 	admin := e.Group("/admin/")
 	admin.Use(authMiddleware())
 	{
-		admin.POST("/post/create", handler.ArticleCreate)
-		admin.PUT("/post/edit", handler.ArticleEdit)
-		admin.DELETE("/post/delete", handler.ArticleDelete)
+		admin.POST("/article/create", handler.ArticleCreate)
+		admin.PUT("/article/edit", handler.ArticleEdit)
+		admin.DELETE("/article/delete", handler.ArticleDelete)
 
 		admin.GET("/file/list", handler.GetFilesList)
 		admin.POST("/file/upload", handler.FileUpload)

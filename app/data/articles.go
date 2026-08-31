@@ -93,7 +93,7 @@ func AddArticle(db *sqlx.DB, ctx context.Context, articleEntity ArticleEntity) e
 		return commitErr
 	}
 
-	slog.Info("[DB] Article added successfully", "id", generatedId)
+	slog.Info("[DB] Articles added successfully", "id", generatedId)
 	return nil
 }
 
@@ -129,7 +129,7 @@ func EditArticle(db *sqlx.DB, ctx context.Context, articleEntity ArticleEntity) 
 		return commitErr
 	}
 
-	slog.Info("[DB] Article updated successfully", "id", articleEntity.Id)
+	slog.Info("[DB] Articles updated successfully", "id", articleEntity.Id)
 	return nil
 }
 
@@ -163,6 +163,6 @@ func DeleteArticle(db *sqlx.DB, ctx context.Context, id uuid.UUID) error {
 		return commitErr
 	}
 
-	slog.Info("[DB] Article deleted successfully", "id", id)
+	slog.Info("[DB] Articles deleted successfully", "id", id)
 	return nil
 }

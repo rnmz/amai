@@ -2,7 +2,7 @@
 import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ArticleBoxComponent from '@/components/ArticleBoxComponent.vue'
-import { usePostsStore } from '@/stores/posts'
+import { usePostsStore } from '../stores/articles'
 import { useFilesStore } from '@/stores/files'
 import { useI18n } from 'vue-i18n'
 

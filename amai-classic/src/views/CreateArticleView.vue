@@ -3,14 +3,14 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef, wa
 import { useRoute, useRouter } from 'vue-router'
 import { marked, initCopyButtons, initCharts, processFootnotes } from '@/utils/marked-render'
 import { useFilesStore } from '@/stores/files'
-import { usePostsStore, usePostStore } from '@/stores/posts'
+import { useArticlesStore, useArticleStore } from '@/stores/articles'
 import { useI18n } from 'vue-i18n'
 
 const route = useRoute()
 const router = useRouter()
 const filesStore = useFilesStore()
-const postsStore = usePostsStore()
-const postStore = usePostStore()
+const articlesStore = useArticlesStore()
+const articleStore = useArticleStore()
 const { t } = useI18n()
 
 marked.setOptions({
@@ -112,17 +112,17 @@ watch(showPreview, (visible) => {
 
 onMounted(async () => {
   if (isEditMode.value && editId.value) {
-    await postStore.fetchPost(editId.value)
-    const post = postStore.post
-    if (post) {
-      title.value = post.title
-      markdownContent.value = post.body
-      if (post.poster_id) {
-        existingPosterId.value = post.poster_id
-        heroPreviewUrl.value = filesStore.getFileUrl(post.poster_id)
+    await articleStore.fetchArticle(editId.value)
+    const article = articleStore.article
+    if (article) {
+      title.value = article.title
+      markdownContent.value = article.body
+      if (article.poster_id) {
+        existingPosterId.value = article.poster_id
+        heroPreviewUrl.value = filesStore.getFileUrl(article.poster_id)
       }
-    } else if (postStore.error) {
-      rawErrorMessage.value = postStore.error
+    } else if (articleStore.error) {
+      rawErrorMessage.value = articleStore.error
     }
   }
 
@@ -170,21 +170,21 @@ async function onPublish() {
     }
 
     const success = isEditMode.value && editId.value
-      ? await postsStore.update({
-          id: editId.value,
-          title: title.value.trim(),
-          poster_id: posterId!,
-          body: markdownContent.value,
-        })
-      : await postsStore.create({
-          title: title.value.trim(),
-          poster_id: posterId!,
-          body: markdownContent.value,
-        })
+      ? await articlesStore.update({
+        id: editId.value,
+        title: title.value.trim(),
+        poster_id: posterId!,
+        body: markdownContent.value,
+      })
+      : await articlesStore.create({
+        title: title.value.trim(),
+        poster_id: posterId!,
+        body: markdownContent.value,
+      })
 
     if (!success) {
-      if (postsStore.error) {
-        rawErrorMessage.value = postsStore.error
+      if (articlesStore.error) {
+        rawErrorMessage.value = articlesStore.error
       } else {
         errorKey.value = 'create_article.err_save'
       }

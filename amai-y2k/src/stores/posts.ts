@@ -106,7 +106,7 @@ export const usePostStore = defineStore("post", () => {
     try {
       post.value = await getPost(id);
     } catch (e) {
-      error.value = getApiErrorMessage(e, "Article not found");
+      error.value = getApiErrorMessage(e, "Articles not found");
       post.value = null;
     } finally {
       isLoading.value = false;
