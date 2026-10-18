@@ -71,7 +71,7 @@ We currently support the following languages:
 ---
 
 ## 📋 ToDo List
-- [x] Custom Frontend Themes (Classic, Cyberpunk, Y2K)
+- [ ] Custom Frontend Themes (Classic, Cyberpunk, Y2K)
 - [ ] Add more languages (i18n)
 - [ ] Content filters
 - [ ] Setup panel (TUI) & Docker setup
