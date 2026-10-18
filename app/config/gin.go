@@ -2,6 +2,8 @@ package config
 
 import (
 	"amai/blog/app/auth"
+	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -14,79 +16,79 @@ import (
 	"golang.org/x/time/rate"
 )
 
-func GinApp(db *sqlx.DB) *gin.Engine {
-	if os.Getenv("GIN_MODE") == "release" {
-		gin.SetMode(gin.ReleaseMode)
-	} else if os.Getenv("GIN_MODE") == "debug" {
-		gin.SetMode(gin.DebugMode)
-	} else {
-		panic("GIN MODE ERROR: GIN_MODE MUST BE release OR debug")
+func GinApp(db *sqlx.DB) (*gin.Engine, error) {
+	switch mode := os.Getenv("GIN_MODE"); mode {
+	case gin.ReleaseMode, gin.DebugMode:
+		gin.SetMode(mode)
+	default:
+		return nil, errors.New("GIN_MODE must be release or debug")
 	}
 
 	router := gin.New()
-
-	router.MaxMultipartMemory = 16 << 20 // 16 MiB
+	router.MaxMultipartMemory = 16 << 20
 	router.HandleMethodNotAllowed = true
 
-	router.Use(gin.CustomRecovery(ginCustomRecovery))
-	router.Use(errorHandler())
-	router.Use(injectSqlx(db))
-	router.Use(rateLimit())
-	router.Use(cors())
-
-	trustedProxies := make([]string, 0, 2)
-	if v := os.Getenv("TRUSTED_PROXY_IPV4"); v != "" {
-		trustedProxies = append(trustedProxies, v)
-	}
-	if v := os.Getenv("TRUSTED_PROXY_IPV6"); v != "" {
-		trustedProxies = append(trustedProxies, v)
+	if err := router.SetTrustedProxies(trustedProxies()); err != nil {
+		return nil, fmt.Errorf("set trusted proxies: %w", err)
 	}
 
-	if len(trustedProxies) > 0 {
-		if err := router.SetTrustedProxies(trustedProxies); err != nil {
-			slog.Error("SetTrustedProxies error", "error", err)
-		}
-	} else {
-		if err := router.SetTrustedProxies(nil); err != nil {
-			slog.Error("SetTrustedProxies error", "error", err)
-		}
-	}
+	router.Use(
+		gin.CustomRecovery(recoveryHandler),
+		cors(os.Getenv("TRUSTED_DOMAIN")),
+		rateLimit(30, 30),
+		errorHandler(),
+		injectSqlx(db),
+	)
 
-	return router
+	return router, nil
 }
 
-func ginCustomRecovery(c *gin.Context, recovered any) {
-	args := []any{
-		"Panic: ", recovered,
-		"Ip", c.ClientIP(),
-		"Method", c.Request.Method,
-		"Path", c.Request.URL.Path,
-		"Query", c.Request.URL.RawQuery,
+func trustedProxies() []string {
+	var list []string
+	for _, key := range []string{"TRUSTED_PROXY_IPV4", "TRUSTED_PROXY_IPV6"} {
+		if v := os.Getenv(key); v != "" {
+			list = append(list, v)
+		}
 	}
-	if gin.Mode() == gin.DebugMode {
-		args = append(args,
-			"UserAgent", c.Request.UserAgent(),
-			"Stack", string(debug.Stack()),
-		)
-	}
-	slog.Error("[Gin] Panic recovered", "args", args)
+	return list
+}
+
+func recoveryHandler(c *gin.Context, recovered any) {
+	slog.Error("[Gin] panic recovered",
+		"panic", recovered,
+		"ip", c.ClientIP(),
+		"method", c.Request.Method,
+		"path", c.Request.URL.Path,
+		"query", c.Request.URL.RawQuery,
+		"user_agent", c.Request.UserAgent(),
+		"stack", string(debug.Stack()),
+	)
 	c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
 }
 
 // Middleware
+
 func errorHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
-		if len(c.Errors) > 0 {
-			if !c.Writer.Written() {
-				lastErr := c.Errors.Last()
-				slog.Error("[Gin] Error handled", "error", lastErr)
-				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
-				return
-			}
+
+		if len(c.Errors) == 0 {
+			return
+		}
+
+		slog.Error("[Gin] error handled",
+			"error", c.Errors.Last(),
+			"method", c.Request.Method,
+			"path", c.Request.URL.Path,
+		)
+
+		if !c.Writer.Written() {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
 		}
 	}
 }
+
+// todo: inject into StartServer, not into GinApp
 
 func injectSqlx(db *sqlx.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -97,69 +99,27 @@ func injectSqlx(db *sqlx.DB) gin.HandlerFunc {
 
 func authMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		err := auth.CheckCookieAuth(c)
-		if err != nil {
+		if err := auth.CheckCookieAuth(c); err != nil {
+			slog.Info("[Gin] auth required", "ip", c.ClientIP())
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "unauthorized"})
-			slog.Info("[Gin] Auth required")
 			return
 		}
 		c.Next()
 	}
 }
 
-func rateLimit() gin.HandlerFunc {
-	type client struct {
-		limiter  *rate.Limiter
-		lastSeen time.Time
-	}
-
-	var (
-		mut     sync.Mutex
-		clients = make(map[string]*client)
-	)
-
-	go func() {
-		ticker := time.NewTicker(time.Minute)
-		defer ticker.Stop()
-		for range ticker.C {
-			mut.Lock()
-			for ip, cl := range clients {
-				if time.Since(cl.lastSeen) > 3*time.Minute {
-					delete(clients, ip)
-				}
-			}
-			mut.Unlock()
-		}
-	}()
-
-	return func(ctx *gin.Context) {
-		ip := ctx.ClientIP()
-
-		mut.Lock()
-		cl, exists := clients[ip]
-		if !exists {
-			cl = &client{limiter: rate.NewLimiter(30, 30)}
-			clients[ip] = cl
-		}
-		cl.lastSeen = time.Now()
-		mut.Unlock()
-
-		if !cl.limiter.Allow() {
-			ctx.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"message": "rate limit exceeded. 30 req/sec only"})
-			return
-		}
-		ctx.Next()
-	}
-}
-
 func authRateLimit() gin.HandlerFunc {
+	return rateLimit(1, 1)
+}
+
+func rateLimit(rps, burst int) gin.HandlerFunc {
 	type client struct {
 		limiter  *rate.Limiter
 		lastSeen time.Time
 	}
 
 	var (
-		mut     sync.Mutex
+		mu      sync.Mutex
 		clients = make(map[string]*client)
 	)
 
@@ -167,45 +127,48 @@ func authRateLimit() gin.HandlerFunc {
 		ticker := time.NewTicker(time.Minute)
 		defer ticker.Stop()
 		for range ticker.C {
-			mut.Lock()
+			mu.Lock()
 			for ip, cl := range clients {
-				if time.Since(cl.lastSeen) > 3*time.Minute {
+				if time.Since(cl.lastSeen) > 10*time.Minute {
 					delete(clients, ip)
 				}
 			}
-			mut.Unlock()
+			mu.Unlock()
 		}
 	}()
 
-	return func(ctx *gin.Context) {
-		ip := ctx.ClientIP()
+	message := fmt.Sprintf("rate limit exceeded. %d req/sec only", rps)
 
-		mut.Lock()
-		cl, exists := clients[ip]
-		if !exists {
-			cl = &client{limiter: rate.NewLimiter(1, 1)}
+	return func(c *gin.Context) {
+		ip := c.ClientIP()
+
+		mu.Lock()
+		cl, ok := clients[ip]
+		if !ok {
+			cl = &client{limiter: rate.NewLimiter(rate.Limit(rps), burst)}
 			clients[ip] = cl
 		}
 		cl.lastSeen = time.Now()
-		mut.Unlock()
+		mu.Unlock()
 
 		if !cl.limiter.Allow() {
-			ctx.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"message": "rate limit exceeded. 1 req/sec only"})
+			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"message": message})
 			return
 		}
-		ctx.Next()
+		c.Next()
 	}
 }
 
-func cors() gin.HandlerFunc {
+func cors(allowOrigin string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", os.Getenv("TRUSTED_DOMAIN"))
-		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		h := c.Writer.Header()
+		h.Set("Access-Control-Allow-Origin", allowOrigin)
+		h.Set("Access-Control-Allow-Credentials", "true")
+		h.Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		h.Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
+		if c.Request.Method == http.MethodOptions {
+			c.AbortWithStatus(http.StatusNoContent)
 			return
 		}
 		c.Next()

@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="readme/logo.png" alt="logo" width="400">
+</div>
+
 # 🌸 Amai
 
 **A lightweight blog designed for simplicity.**
@@ -19,9 +23,6 @@
 
 
   * **Classic:** [Gallery](./readme/gallery/classic/) | [Frontend](./amai-classic/)
-  * **Cyberpunk:** [Gallery](./readme/gallery/cyber/) | [Frontend](./amai-cyber/)
-  * **Y2K / Early Web:** [Gallery](./readme/gallery/y2k/) | [Frontend](./amai-y2k/)
-  * **Neo:** [Gallery](./readme/gallery/neo/) | [Frontend](./amai-neo/)
 
 ---
 
@@ -29,14 +30,14 @@
 
 Amai is built using a robust and modern set of tools:
 
-| Component | Technology |
-| :--- | :--- |
-| **Backend Framework** | [Gin Gonic](https://gin-gonic.com/) |
-| **Database Driver** | [lib/pq](https://github.com/lib/pq/) |
-| **SQL Toolkit** | [sqlx](https://github.com/jmoiron/sqlx/) |
-| **Frontend Framework** | [Vue](https://vuejs.org/) |
-| **Markdown Parser** | [Marked.js](https://marked.js.org/) |
-| **LaTeX Parser** | [KaTeX.js](https://katex.org/) |
+| Component              | Technology                               |
+|------------------------|------------------------------------------|
+| **Backend Framework**  | [Gin Gonic](https://gin-gonic.com/)      |
+| **Database Driver**    | [lib/pq](https://github.com/lib/pq/)     |
+| **SQL Toolkit**        | [sqlx](https://github.com/jmoiron/sqlx/) |
+| **Frontend Framework** | [Vue](https://vuejs.org/)                |
+| **Markdown Parser**    | [Marked.js](https://marked.js.org/)      |
+| **LaTeX Parser**       | [KaTeX.js](https://katex.org/)           |
 
 ---
 
@@ -65,7 +66,7 @@ We currently support the following languages:
 
   * 🇺🇸 **English** (100%)
   * 🇷🇺 **Russian** (100%)
-  * 🇯🇵 **Japanese** (100%)
+  * 🇯🇵 **Japanese** (100%, AI translation)
 
 ---
 

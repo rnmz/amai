@@ -54,8 +54,7 @@ func ArticleGetById(c *gin.Context) {
 
 	rawArticle, dataErr := data.GetArticleById(db, c.Request.Context(), id)
 	if dataErr != nil {
-		c.Error(dataErr)
-		c.Abort()
+		_ = c.Error(dataErr)
 		return
 	}
 
@@ -84,8 +83,7 @@ func ArticleGetAll(c *gin.Context) {
 
 	pages, pagesErr := data.GetAllPagesArticles(db, c.Request.Context())
 	if pagesErr != nil {
-		c.Error(pagesErr)
-		c.Abort()
+		_ = c.Error(pagesErr)
 		return
 	}
 
@@ -96,8 +94,7 @@ func ArticleGetAll(c *gin.Context) {
 
 	articles, err := data.GetAllArticles(db, c.Request.Context(), page)
 	if err != nil {
-		c.Error(err)
-		c.Abort()
+		_ = c.Error(err)
 		return
 	}
 
@@ -124,8 +121,7 @@ func ArticleCreate(c *gin.Context) {
 		Body:   articleJSON.Body,
 	})
 	if err != nil {
-		c.Error(err)
-		c.Abort()
+		_ = c.Error(err)
 		return
 	}
 
@@ -152,8 +148,7 @@ func ArticleEdit(c *gin.Context) {
 		Body:   articleJSON.Body,
 	})
 	if err != nil {
-		c.Error(err)
-		c.Abort()
+		_ = c.Error(err)
 		return
 	}
 
@@ -177,8 +172,7 @@ func ArticleDelete(c *gin.Context) {
 
 	err := data.DeleteArticle(db, c.Request.Context(), id)
 	if err != nil {
-		c.Error(err)
-		c.Abort()
+		_ = c.Error(err)
 		return
 	}
 

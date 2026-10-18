@@ -11,8 +11,7 @@ func AuthLogin(c *gin.Context) {
 	err := auth.Login(c)
 
 	if err != nil {
-		c.Error(err)
-		c.Abort()
+		_ = c.Error(err)
 		return
 	}
 	c.JSON(http.StatusAccepted, gin.H{"message": "login"})
@@ -22,8 +21,7 @@ func AuthLogout(c *gin.Context) {
 	err := auth.Logout(c)
 
 	if err != nil {
-		c.Error(err)
-		c.Abort()
+		_ = c.Error(err)
 		return
 	}
 	c.JSON(http.StatusAccepted, gin.H{"message": "logout"})

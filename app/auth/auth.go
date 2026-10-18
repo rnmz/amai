@@ -2,8 +2,10 @@ package auth
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -14,6 +16,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const (
+	cookieName      = "sessionId"
+	sessionMaxAge   = 7 * 24 * time.Hour
+	refreshEvery    = 5 * time.Minute
+	maxSessionIDLen = 128
+)
+
+var sessionTTL = 24 * time.Hour
+
 type sessionStruct struct {
 	User     string
 	Created  time.Time
@@ -21,8 +32,12 @@ type sessionStruct struct {
 	LastSeen time.Time
 }
 
-var sessions sync.Map
-var sessionTTL = 24 * time.Hour
+type sessionKey [sha256.Size]byte
+
+var (
+	sessionsMu sync.Mutex
+	sessions   = make(map[sessionKey]sessionStruct)
+)
 
 type ErrorAuth struct {
 	ErrorType    string
@@ -43,61 +58,32 @@ func (e *ErrorAuth) Error() string {
 }
 
 func CheckCookieAuth(c *gin.Context) error {
-	sessionId, err := c.Cookie("sessionId")
-
-	if err != nil {
-		slog.Warn("[Cookie] Cookie not found or invalid")
+	id, err := c.Cookie(cookieName)
+	if err != nil || id == "" || len(id) > maxSessionIDLen {
+		slog.Warn("[Cookie] Cookie not found or invalid", "ip", c.ClientIP())
 		return &ErrorAuth{ErrorType: ErrorCookieInvalid, ErrorMessage: "Cookie not found or invalid"}
 	}
 
-	if sessionId == "" {
-		slog.Warn("[Cookie] Empty session id")
-		return &ErrorAuth{ErrorType: ErrorCookieInvalid, ErrorMessage: "Empty sessionId"}
-	}
-
-	val, exists := sessions.Load(sessionId)
-	if !exists {
-		slog.Warn("[Cookie] Session doesn't exists")
-		return &ErrorAuth{ErrorType: ErrorCookieNotExists, ErrorMessage: "No found"}
-	}
-
-	session := val.(sessionStruct)
-
-	if time.Now().After(session.Expires) {
-		sessions.Delete(sessionId)
-		slog.Warn("[Cookie] Session expired", "sessionId", sessionId)
+	key := keyOf(id)
+	switch touchSession(key, time.Now()) {
+	case sessionMissing:
+		slog.Warn("[Cookie] Session doesn't exist", "ip", c.ClientIP())
+		return &ErrorAuth{ErrorType: ErrorCookieNotExists, ErrorMessage: "Not found"}
+	case sessionExpired:
+		slog.Warn("[Cookie] Session expired", "session", fingerprint(key))
 		return &ErrorAuth{ErrorType: ErrorCookieExpired, ErrorMessage: "Expired"}
+	case sessionRefreshed:
+		setSessionCookie(c, id, int(sessionTTL.Seconds()))
 	}
-
-	currTime := time.Now()
-	session.LastSeen = currTime
-	session.Expires = currTime.Add(sessionTTL)
-	sessions.Store(sessionId, session)
-
-	var isSecure bool
-	if os.Getenv("GIN_MODE") == "release" {
-		isSecure = true
-	} else {
-		isSecure = false
-	}
-
-	http.SetCookie(c.Writer, &http.Cookie{
-		Name:     "sessionId",
-		Value:    sessionId,
-		Path:     "/",
-		MaxAge:   int(sessionTTL.Seconds()),
-		HttpOnly: true,
-		Secure:   isSecure,
-		SameSite: http.SameSiteLaxMode,
-	})
-	slog.Info("[Cookie] Session cookie updated", "sessionId", sessionId)
 	return nil
 }
 
 func Login(c *gin.Context) error {
+	c.Header("Cache-Control", "no-store")
+
 	user, pass, ok := c.Request.BasicAuth()
 	if !ok {
-		slog.Warn("[Auth] Basic auth header missing or malformed")
+		slog.Warn("[Auth] Basic auth header missing or malformed", "ip", c.ClientIP())
 		return &ErrorAuth{ErrorType: ErrorBasicAuthNotValid, ErrorMessage: "Invalid basic auth header"}
 	}
 
@@ -108,104 +94,153 @@ func Login(c *gin.Context) error {
 		return &ErrorAuth{ErrorType: ErrorAdminCredentialsInvalid, ErrorMessage: "Internal server configuration error"}
 	}
 
-	userValid := subtle.ConstantTimeCompare([]byte(user), []byte(validUser)) == 1
-	passValid := subtle.ConstantTimeCompare([]byte(pass), []byte(validPass)) == 1
+	userValid := secureEqual(user, validUser)
+	passValid := secureEqual(pass, validPass)
 	if !userValid || !passValid {
-		slog.Warn("[Auth] Invalid login credentials attempt", "username", user)
+		slog.Warn("[Auth] Invalid login attempt", "ip", c.ClientIP())
 		return &ErrorAuth{ErrorType: ErrorBasicAuthNotValid, ErrorMessage: "Invalid username or password"}
 	}
 
-	sessionId := generateSessionID()
-	currTime := time.Now()
-	sessions.Store(sessionId, sessionStruct{
-		User:     user,
-		Created:  currTime,
-		Expires:  currTime.Add(sessionTTL),
-		LastSeen: currTime,
-	})
-
-	var isSecure bool
-	if os.Getenv("GIN_MODE") == "release" {
-		isSecure = true
-	} else {
-		isSecure = false
+	if old, err := c.Cookie(cookieName); err == nil && old != "" {
+		deleteSession(keyOf(old))
 	}
 
-	http.SetCookie(c.Writer, &http.Cookie{
-		Name:     "sessionId",
-		Value:    sessionId,
-		Path:     "/",
-		MaxAge:   int(sessionTTL.Seconds()),
-		HttpOnly: true,
-		Secure:   isSecure,
-		SameSite: http.SameSiteLaxMode,
-	})
+	id, err := generateSessionID()
+	if err != nil {
+		return fmt.Errorf("generate session id: %w", err)
+	}
 
-	slog.Info("[Auth] User logged in successfully", "username", user, "sessionId", sessionId)
+	now := time.Now()
+	key := keyOf(id)
+
+	sessionsMu.Lock()
+	sessions[key] = sessionStruct{
+		User:     user,
+		Created:  now,
+		Expires:  now.Add(sessionTTL),
+		LastSeen: now,
+	}
+	sessionsMu.Unlock()
+
+	setSessionCookie(c, id, int(sessionTTL.Seconds()))
+	slog.Info("[Auth] User logged in", "ip", c.ClientIP(), "session", fingerprint(key))
 	return nil
 }
 
 func Logout(c *gin.Context) error {
-	sessionId, err := c.Cookie("sessionId")
+	setSessionCookie(c, "", -1)
+
+	id, err := c.Cookie(cookieName)
 	if err != nil {
-		slog.Warn("[Cookie] Logout attempted without sessionId cookie")
-		return &ErrorAuth{ErrorType: ErrorCookieNotExists}
+		slog.Warn("[Cookie] Logout without session cookie", "ip", c.ClientIP())
+		return &ErrorAuth{ErrorType: ErrorCookieNotExists, ErrorMessage: "Cookie not found"}
+	}
+	if id == "" || len(id) > maxSessionIDLen {
+		slog.Warn("[Cookie] Logout with invalid session cookie", "ip", c.ClientIP())
+		return &ErrorAuth{ErrorType: ErrorCookieInvalid, ErrorMessage: "Cookie invalid"}
 	}
 
-	if sessionId == "" {
-		slog.Warn("[Cookie] Logout attempted with empty sessionId cookie")
-		return &ErrorAuth{ErrorType: ErrorCookieInvalid}
+	key := keyOf(id)
+	if !deleteSession(key) {
+		slog.Warn("[Session] Logout for non-existent or expired session", "ip", c.ClientIP())
+		return &ErrorAuth{ErrorType: ErrorCookieNotExists, ErrorMessage: "Session not found"}
 	}
 
-	_, exists := sessions.Load(sessionId)
-	if !exists {
-		slog.Warn("[Session] Logout attempted for non-existent or expired session", "sessionId", sessionId)
-		return &ErrorAuth{ErrorType: ErrorCookieNotExists}
-	}
-
-	sessions.Delete(sessionId)
-
-	var isSecure bool
-	if os.Getenv("GIN_MODE") == "release" {
-		isSecure = true
-	} else {
-		isSecure = false
-	}
-
-	http.SetCookie(c.Writer, &http.Cookie{
-		Name:     "sessionId",
-		Value:    "",
-		Path:     "/",
-		MaxAge:   -1,
-		HttpOnly: true,
-		Secure:   isSecure,
-		SameSite: http.SameSiteLaxMode,
-	})
-	slog.Info("[Session] User logged out successfully", "sessionId", sessionId)
+	slog.Info("[Session] User logged out", "session", fingerprint(key))
 	return nil
 }
 
-func generateSessionID() string {
-	b := make([]byte, 32)
-	_, _ = rand.Read(b)
-	return base64.URLEncoding.EncodeToString(b)
+func CleanupSessions() {
+	now := time.Now()
+	removed := 0
+
+	sessionsMu.Lock()
+	for key, s := range sessions {
+		if isExpired(s, now) {
+			delete(sessions, key)
+			removed++
+		}
+	}
+	sessionsMu.Unlock()
+
+	if removed > 0 {
+		slog.Info("[Session] Cleanup completed", "removed", removed)
+	}
 }
 
-func CleanupSessions() {
-	slog.Debug("[Session] Running background session cleanup")
-	deletedCount := 0
+type touchResult int
 
-	sessions.Range(func(key, value any) bool {
-		session := value.(sessionStruct)
-		if time.Now().After(session.Expires) {
-			sessions.Delete(key)
-			deletedCount++
-			slog.Debug("[Session] Expired session removed during cleanup", "sessionId", key)
-		}
-		return true
-	})
+const (
+	sessionMissing touchResult = iota
+	sessionExpired
+	sessionValid
+	sessionRefreshed
+)
 
-	if deletedCount > 0 {
-		slog.Info("[Session] Background cleanup completed", "removedSessionsCount", deletedCount)
+func touchSession(key sessionKey, now time.Time) touchResult {
+	sessionsMu.Lock()
+	defer sessionsMu.Unlock()
+
+	s, ok := sessions[key]
+	if !ok {
+		return sessionMissing
 	}
+	if isExpired(s, now) {
+		delete(sessions, key)
+		return sessionExpired
+	}
+	if now.Sub(s.LastSeen) < refreshEvery {
+		return sessionValid
+	}
+
+	s.LastSeen = now
+	s.Expires = now.Add(sessionTTL)
+	sessions[key] = s
+	return sessionRefreshed
+}
+
+func deleteSession(key sessionKey) bool {
+	sessionsMu.Lock()
+	defer sessionsMu.Unlock()
+
+	_, ok := sessions[key]
+	delete(sessions, key)
+	return ok
+}
+
+func isExpired(s sessionStruct, now time.Time) bool {
+	return now.After(s.Expires) || now.After(s.Created.Add(sessionMaxAge))
+}
+
+func setSessionCookie(c *gin.Context, value string, maxAge int) {
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     cookieName,
+		Value:    value,
+		Path:     "/",
+		MaxAge:   maxAge,
+		HttpOnly: true,
+		Secure:   os.Getenv("GIN_MODE") == "release",
+		SameSite: http.SameSiteLaxMode,
+	})
+}
+
+func generateSessionID() (string, error) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(b), nil
+}
+
+func keyOf(id string) sessionKey {
+	return sha256.Sum256([]byte(id))
+}
+
+func fingerprint(k sessionKey) string {
+	return hex.EncodeToString(k[:4])
+}
+
+func secureEqual(a, b string) bool {
+	ha, hb := sha256.Sum256([]byte(a)), sha256.Sum256([]byte(b))
+	return subtle.ConstantTimeCompare(ha[:], hb[:]) == 1
 }

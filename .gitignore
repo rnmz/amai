@@ -9,3 +9,5 @@ log
 files
 node_modules
 *.db
+*.db_shm
+*.db_wai

@@ -35,7 +35,7 @@ func CheckEnvParams() error {
 	}
 	for _, v := range vars {
 		if os.Getenv(v) == "" {
-			return fmt.Errorf("Environment variable %s is not set", v)
+			return fmt.Errorf("environment variable %s is not set", v)
 		}
 	}
 	return nil
@@ -119,15 +119,26 @@ func ShowStartMessage() {
 }
 
 func StartServer() {
-	logger, err := InitLogger()
+	logger, err := InitLogger("info", "./log")
 	if err != nil {
+		slog.Error("[StartServer] init logger", "error", err)
+		return
+	}
+	defer logger.Close()
+
+	db, err := InitDatabase()
+	if err != nil {
+		slog.Error("[StartServer] init database", "error", err)
+		return
+	}
+	defer CloseDatabase(db)
+
+	r, err := GinApp(db)
+	if err != nil {
+		slog.Error("[StartServer] init gin", "error", err)
 		return
 	}
 
-	defer logger.Close()
-
-	db := InitDatabase()
-	r := GinApp(db)
 	Routing(r)
 
 	srv := &http.Server{
@@ -178,5 +189,4 @@ func StartServer() {
 	}
 
 	cleanupDone <- true
-	CloseDatabase(db)
 }

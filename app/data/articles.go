@@ -2,12 +2,14 @@ package data
 
 import (
 	"context"
-	"log/slog"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
+
+const articleColumns = "id, title, poster, created, updated, body"
 
 type ArticleEntity struct {
 	Id      uuid.UUID `db:"id"`
@@ -19,150 +21,67 @@ type ArticleEntity struct {
 }
 
 func GetAllPagesArticles(db *sqlx.DB, ctx context.Context) (int, error) {
-	var items int
-
-	slog.Debug("[DB] Requesting total pages count")
-	err := db.GetContext(ctx, &items, "SELECT COUNT(*) FROM articles")
-	if err != nil {
-		slog.Error("[DB] Failed to count articles", "error", err)
-		return 0, err
+	var total int
+	if err := db.GetContext(ctx, &total, "SELECT COUNT(*) FROM articles"); err != nil {
+		return 0, fmt.Errorf("count articles: %w", err)
 	}
-
-	pagesCount := (items + 20 - 1) / 20
-	slog.Debug("[DB] Total pages calculated", "count", pagesCount, "totalItems", items)
-	return pagesCount, nil
+	return (total + pageSize - 1) / pageSize, nil
 }
 
 func GetAllArticles(db *sqlx.DB, ctx context.Context, page int) ([]ArticleEntity, error) {
-	var articleEntities []ArticleEntity
-	offset := (page - 1) * 20
+	var articles []ArticleEntity
+	offset := (page - 1) * pageSize
 
-	slog.Info("[DB] Requesting articles list", "page", page, "offset", offset)
-	err := db.SelectContext(ctx, &articleEntities, "SELECT * FROM articles ORDER BY created DESC LIMIT 20 OFFSET $1", offset)
+	err := db.SelectContext(ctx, &articles,
+		"SELECT "+articleColumns+" FROM articles ORDER BY created DESC, id LIMIT $1 OFFSET $2",
+		pageSize, offset,
+	)
 	if err != nil {
-		slog.Error("[DB] Failed to fetch articles list", "page", page, "error", err)
-		return nil, err
+		return nil, fmt.Errorf("list articles (page %d): %w", page, err)
 	}
-	return articleEntities, nil
+	return articles, nil
 }
 
 func GetArticleById(db *sqlx.DB, ctx context.Context, id uuid.UUID) (ArticleEntity, error) {
-	var articleEntity ArticleEntity
-
-	slog.Info("[DB] Requesting article by ID", "id", id)
-	err := db.GetContext(ctx, &articleEntity, "SELECT * FROM articles WHERE id = $1", id.String())
+	var article ArticleEntity
+	err := db.GetContext(ctx, &article,
+		"SELECT "+articleColumns+" FROM articles WHERE id = $1", id.String())
 	if err != nil {
-		slog.Error("[DB] Failed to fetch article", "id", id, "error", err)
-		return ArticleEntity{}, err
+		return ArticleEntity{}, fmt.Errorf("get article %s: %w", id, err)
 	}
-	return articleEntity, nil
+	return article, nil
 }
 
-func AddArticle(db *sqlx.DB, ctx context.Context, articleEntity ArticleEntity) error {
-	slog.Info("[DB] Starting transaction to add article")
-	tx, txErr := db.BeginTxx(ctx, nil)
-	currentTime := time.Now().UTC()
+func AddArticle(db *sqlx.DB, ctx context.Context, article ArticleEntity) error {
+	now := time.Now().UTC()
 
-	if txErr != nil {
-		slog.Error("[DB] Failed to start transaction", "error", txErr)
-		return txErr
-	}
-	defer tx.Rollback()
-
-	generatedId := uuid.NewString()
-
-	_, err := tx.NamedExecContext(ctx, `
-		INSERT INTO articles (id, title, poster, created, updated, body) 
-		VALUES (:id, :title, :poster, :created, :updated, :body)`,
-		map[string]any{
-			"id":      generatedId,
-			"title":   articleEntity.Title,
-			"poster":  articleEntity.Poster,
-			"created": currentTime,
-			"updated": currentTime,
-			"body":    articleEntity.Body,
-		},
+	_, err := db.ExecContext(ctx,
+		`INSERT INTO articles (id, title, poster, created, updated, body)
+		 VALUES ($1, $2, $3, $4, $5, $6)`,
+		uuid.NewString(), article.Title, article.Poster.String(), now, now, article.Body,
 	)
 	if err != nil {
-		slog.Error("[DB] Failed to insert new article metadata", "generatedId", generatedId, "error", err)
-		return err
+		return fmt.Errorf("add article: %w", err)
 	}
-
-	if commitErr := tx.Commit(); commitErr != nil {
-		slog.Error("[DB] Failed to commit add article transaction", "generatedId", generatedId, "error", commitErr)
-		return commitErr
-	}
-
-	slog.Info("[DB] Articles added successfully", "id", generatedId)
 	return nil
 }
 
-func EditArticle(db *sqlx.DB, ctx context.Context, articleEntity ArticleEntity) error {
-	slog.Info("[DB] Starting transaction to edit article", "id", articleEntity.Id)
-	tx, txErr := db.BeginTxx(ctx, nil)
-
-	if txErr != nil {
-		slog.Error("[DB] Failed to start transaction", "id", articleEntity.Id, "error", txErr)
-		return txErr
-	}
-	defer tx.Rollback()
-
-	_, err := tx.NamedExecContext(ctx, `
-		UPDATE articles 
-		SET title = :title, poster = :poster, updated = :updated, body = :body 
-		WHERE id = :id`,
-		map[string]any{
-			"id":      articleEntity.Id.String(),
-			"title":   articleEntity.Title,
-			"poster":  articleEntity.Poster,
-			"updated": time.Now().UTC(),
-			"body":    articleEntity.Body,
-		},
+func EditArticle(db *sqlx.DB, ctx context.Context, article ArticleEntity) error {
+	_, err := db.ExecContext(ctx,
+		`UPDATE articles
+		 SET title = $1, poster = $2, updated = $3, body = $4
+		 WHERE id = $5`,
+		article.Title, article.Poster.String(), time.Now().UTC(), article.Body, article.Id.String(),
 	)
 	if err != nil {
-		slog.Error("[DB] Failed to update article metadata", "id", articleEntity.Id, "error", err)
-		return err
+		return fmt.Errorf("edit article %s: %w", article.Id, err)
 	}
-
-	if commitErr := tx.Commit(); commitErr != nil {
-		slog.Error("[DB] Failed to commit edit article transaction", "id", articleEntity.Id, "error", commitErr)
-		return commitErr
-	}
-
-	slog.Info("[DB] Articles updated successfully", "id", articleEntity.Id)
 	return nil
 }
 
 func DeleteArticle(db *sqlx.DB, ctx context.Context, id uuid.UUID) error {
-	slog.Info("[DB] Starting transaction to delete article", "id", id)
-	tx, txErr := db.BeginTxx(ctx, nil)
-
-	if txErr != nil {
-		slog.Error("[DB] Failed to start transaction", "id", id, "error", txErr)
-		return txErr
+	if _, err := db.ExecContext(ctx, "DELETE FROM articles WHERE id = $1", id.String()); err != nil {
+		return fmt.Errorf("delete article %s: %w", id, err)
 	}
-	defer tx.Rollback()
-
-	res, err := tx.ExecContext(ctx, "DELETE FROM articles WHERE id = $1", id.String())
-	if err != nil {
-		slog.Error("[DB] Failed to delete article", "id", id, "error", err)
-		return err
-	}
-
-	rows, affErr := res.RowsAffected()
-	if affErr != nil {
-		slog.Error("[DB] Failed to get affected rows count", "id", id, "error", affErr)
-		return affErr
-	}
-	if rows == 0 {
-		slog.Warn("[DB] No rows affected during article deletion", "id", id)
-	}
-
-	if commitErr := tx.Commit(); commitErr != nil {
-		slog.Error("[DB] Failed to commit delete article transaction", "id", id, "error", commitErr)
-		return commitErr
-	}
-
-	slog.Info("[DB] Articles deleted successfully", "id", id)
 	return nil
 }
