@@ -2,20 +2,20 @@
 import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ArticleBoxComponent from '@/components/ArticleBoxComponent.vue'
-import { usePostsStore } from '@/stores/posts'
+import { useArticlesStore } from '@/stores/articles'
 import { useFilesStore } from '@/stores/files'
 import { useI18n } from 'vue-i18n'
 
 const route = useRoute()
 const router = useRouter()
-const postsStore = usePostsStore()
+const articlesStore = useArticlesStore()
 const filesStore = useFilesStore()
 
 const { t, locale } = useI18n()
 
 const isAdmin = computed(() => Boolean(route.meta.isAdminPage))
 
-onMounted(() => postsStore.fetchPosts())
+onMounted(() => articlesStore.fetchArticles())
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString(locale.value)
@@ -34,43 +34,43 @@ function onEdit(id: string) {
 async function onDelete(id: string) {
   const isConfirmed = confirm(t('article.delete'))
   if (!isConfirmed) return
-  await postsStore.remove(id)
+  await articlesStore.remove(id)
 }
 
 function goToPage(page: number) {
-  postsStore.fetchPosts(page)
+  articlesStore.fetchArticles(page)
 }
 </script>
 
 <template>
   <div class="articles_list">
-    <p v-if="postsStore.isLoading">{{ t('common.loading') }}</p>
-    <p v-else-if="postsStore.error" class="error-message">{{ postsStore.error }}</p>
-    <p v-else-if="postsStore.posts.length === 0">{{ t('article.no_articles') }}</p>
+    <p v-if="articlesStore.isLoading">{{ t('common.loading') }}</p>
+    <p v-else-if="articlesStore.error" class="error-message">{{ articlesStore.error }}</p>
+    <p v-else-if="articlesStore.articles.length === 0">{{ t('article.no_articles') }}</p>
 
     <template v-else>
       <div class="articles-grid">
         <ArticleBoxComponent
-          v-for="post in postsStore.posts"
-          :key="post.id"
-          :id="post.id"
-          :title="post.title"
-          :published-at="formatDate(post.created_at)"
-          :edited-at="post.updated_at ? formatDate(post.updated_at) : undefined"
-          :image-url="filesStore.getFileUrl(post.poster_id)"
+          v-for="article in articlesStore.articles"
+          :key="article.id"
+          :id="article.id"
+          :title="article.title"
+          :published-at="formatDate(article.created_at)"
+          :edited-at="article.updated_at ? formatDate(article.updated_at) : undefined"
+          :image-url="filesStore.getFileUrl(article.poster_id)"
           :is-admin="isAdmin"
           @click="onCardClick"
-          @edit="onEdit(post.id)"
-          @delete="onDelete(post.id)"
+          @edit="onEdit(article.id)"
+          @delete="onDelete(article.id)"
         />
       </div>
 
-      <div v-if="postsStore.pages > 1" class="pagination">
+      <div v-if="articlesStore.pages > 1" class="pagination">
         <button
-          v-for="page in postsStore.pages"
+          v-for="page in articlesStore.pages"
           :key="page"
           type="button"
-          :disabled="page === postsStore.currentPage"
+          :disabled="page === articlesStore.currentPage"
           @click="goToPage(page)"
         >
           {{ page }}

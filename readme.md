@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="readme/logo.png" alt="logo" width="400">
+</div>
+
 # 🌸 Amai
 
 **A lightweight blog designed for simplicity.**
@@ -9,7 +13,7 @@
 ## ✨ Features
 
   * **Markdown First:** Write your content in Markdown and let Amai handle the rendering.
-  * **Extended Post Capabilities:** Built-in math formulas, text markers, zero-dependency footnotes, and interactive code blocks.
+  * **Extended Articles Capabilities:** Built-in math formulas, text markers, zero-dependency footnotes, and interactive code blocks.
   * **High Compatibility:** Extensive support for standard Markdown specifications.
   * **Blazing Fast:** Powered by Go and Vue for optimal performance.
 
@@ -19,9 +23,6 @@
 
 
   * **Classic:** [Gallery](./readme/gallery/classic/) | [Frontend](./amai-classic/)
-  * **Cyberpunk:** [Gallery](./readme/gallery/cyber/) | [Frontend](./amai-cyber/)
-  * **Y2K / Early Web:** [Gallery](./readme/gallery/y2k/) | [Frontend](./amai-y2k/)
-  * **Neo:** [Gallery](./readme/gallery/neo/) | [Frontend](./amai-neo/)
 
 ---
 
@@ -29,18 +30,18 @@
 
 Amai is built using a robust and modern set of tools:
 
-| Component | Technology |
-| :--- | :--- |
-| **Backend Framework** | [Gin Gonic](https://gin-gonic.com/) |
-| **Database Driver** | [lib/pq](https://github.com/lib/pq/) |
-| **SQL Toolkit** | [sqlx](https://github.com/jmoiron/sqlx/) |
-| **Frontend Framework** | [Vue](https://vuejs.org/) |
-| **Markdown Parser** | [Marked.js](https://marked.js.org/) |
-| **LaTeX Parser** | [KaTeX.js](https://katex.org/) |
+| Component              | Technology                               |
+|------------------------|------------------------------------------|
+| **Backend Framework**  | [Gin Gonic](https://gin-gonic.com/)      |
+| **Database Driver**    | [lib/pq](https://github.com/lib/pq/)     |
+| **SQL Toolkit**        | [sqlx](https://github.com/jmoiron/sqlx/) |
+| **Frontend Framework** | [Vue](https://vuejs.org/)                |
+| **Markdown Parser**    | [Marked.js](https://marked.js.org/)      |
+| **LaTeX Parser**       | [KaTeX.js](https://katex.org/)           |
 
 ---
 
-## 📝 Markdown & Post Features
+## 📝 Markdown & Articles Features
 
 Amai ensures consistent formatting across standard specs while offering custom enhancements for rich content creation. Check out the [**Writing Guide**](./docs/) for a full example of what you can do in a post.
 
@@ -65,7 +66,7 @@ We currently support the following languages:
 
   * 🇺🇸 **English** (100%)
   * 🇷🇺 **Russian** (100%)
-  * 🇯🇵 **Japanese** (100%)
+  * 🇯🇵 **Japanese** (100%, AI translation)
 
 ---
 

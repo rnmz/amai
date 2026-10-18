@@ -2,14 +2,53 @@ package handler
 
 import (
 	"amai/blog/app/data"
+	"bytes"
+	"errors"
 	"io"
+	"mime"
 	"net/http"
 	"path/filepath"
+	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+)
+
+const maxUploadSize = 32 << 20
+
+var allowedMimeTypes = map[string]bool{
+	"image/jpeg":                    true,
+	"image/png":                     true,
+	"image/webp":                    true,
+	"image/gif":                     true,
+	"text/markdown":                 true,
+	"text/plain":                    true,
+	"text/csv":                      true,
+	"application/pdf":               true,
+	"application/zip":               true,
+	"application/msword":            true,
+	"application/vnd.ms-powerpoint": true,
+	"application/vnd.ms-excel":      true,
+
+	"application/vnd.oasis.opendocument.text":                                   true,
+	"application/vnd.oasis.opendocument.presentation":                           true,
+	"application/vnd.oasis.opendocument.spreadsheet":                            true,
+	"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":         true,
+	"application/vnd.openxmlformats-officedocument.wordprocessingml.document":   true,
+	"application/vnd.openxmlformats-officedocument.presentationml.presentation": true,
+}
+
+var (
+	legacyOffice = map[string]bool{
+		"application/msword":            true,
+		"application/vnd.ms-powerpoint": true,
+		"application/vnd.ms-excel":      true,
+	}
+	oleMagic  = []byte{0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1}
+	extRegexp = regexp.MustCompile(`^\.[a-z0-9]{1,10}$`)
 )
 
 type FileJSON struct {
@@ -18,41 +57,31 @@ type FileJSON struct {
 }
 
 func parseRawFiles(file data.FileEntity) FileJSON {
-	result := FileJSON{
+	return FileJSON{
 		FileId:  file.FileId,
 		FileExt: file.FileExt,
 	}
-
-	return result
 }
 
 func FileGet(c *gin.Context) {
-	db := c.MustGet("db").(*sqlx.DB)
-
-	queryId := c.Query("id")
-	if queryId == "" {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "query id not set"})
+	id, ok := queryUUID(c)
+	if !ok {
 		return
 	}
 
-	id, parseErr := uuid.Parse(queryId)
-	if parseErr != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "invalid UUID format"})
+	filePath, err := data.GetFileById(getDB(c), c.Request.Context(), id)
+	if err != nil {
+		_ = c.Error(err)
 		return
 	}
 
-	filePath, fileErr := data.GetFileById(db, c.Request.Context(), id)
-	if fileErr != nil {
-		c.Error(fileErr)
-		c.Abort()
-		return
-	}
-
+	c.Header("X-Content-Type-Options", "nosniff")
 	c.File(filePath)
 }
 
 func GetFilesList(c *gin.Context) {
-	db := c.MustGet("db").(*sqlx.DB)
+	db := getDB(c)
+	ctx := c.Request.Context()
 
 	pageQuery := c.Query("page")
 	if pageQuery == "" {
@@ -60,8 +89,8 @@ func GetFilesList(c *gin.Context) {
 		return
 	}
 
-	page, convErr := strconv.Atoi(pageQuery)
-	if convErr != nil {
+	page, err := strconv.Atoi(pageQuery)
+	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "query page should be int"})
 		return
 	}
@@ -70,26 +99,23 @@ func GetFilesList(c *gin.Context) {
 		return
 	}
 
-	pages, pagesErr := data.GetAllPagesFile(db, c.Request.Context())
-	if pagesErr != nil {
-		c.Error(pagesErr)
-		c.Abort()
+	pages, err := data.GetAllPagesFile(db, ctx)
+	if err != nil {
+		_ = c.Error(err)
 		return
 	}
-
 	if page > pages {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "page not found"})
 		return
 	}
 
-	rawFiles, filesErr := data.GetAllFiles(db, c.Request.Context(), page)
-	if filesErr != nil {
-		c.Error(filesErr)
-		c.Abort()
+	rawFiles, err := data.GetAllFiles(db, ctx, page)
+	if err != nil {
+		_ = c.Error(err)
 		return
 	}
 
-	var files []FileJSON
+	files := make([]FileJSON, 0, len(rawFiles))
 	for _, e := range rawFiles {
 		files = append(files, parseRawFiles(e))
 	}
@@ -98,24 +124,14 @@ func GetFilesList(c *gin.Context) {
 }
 
 func FileUpload(c *gin.Context) {
-	db := c.MustGet("db").(*sqlx.DB)
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxUploadSize)
 
-	allowedFileMimeType := map[string]bool{
-		"image/jpeg":      true,
-		"image/png":       true,
-		"image/webp":      true,
-		"image/gif":       true,
-		"text/markdown":   true,
-		"text/plain":      true,
-		"application/pdf": true,
-		"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":         true,
-		"application/vnd.openxmlformats-officedocument.wordprocessingml.document":   true,
-		"application/vnd.openxmlformats-officedocument.presentationml.presentation": true,
-	}
-
-	file, formFileErr := c.FormFile("file")
-
-	if formFileErr != nil {
+	file, err := c.FormFile("file")
+	if err != nil {
+		if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
+			c.AbortWithStatusJSON(http.StatusRequestEntityTooLarge, gin.H{"message": "file too large"})
+			return
+		}
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "no file uploaded"})
 		return
 	}
@@ -123,38 +139,41 @@ func FileUpload(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "empty file uploaded"})
 		return
 	}
-	if !allowedFileMimeType[file.Header.Get("Content-Type")] {
+
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	if ext != "" && !extRegexp.MatchString(ext) {
 		c.AbortWithStatusJSON(http.StatusUnsupportedMediaType, gin.H{"message": "invalid file uploaded"})
 		return
 	}
 
-	src, fileErr := file.Open()
-	if fileErr != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to process file"})
+	src, err := file.Open()
+	if err != nil {
+		uploadFailed(c, err)
 		return
 	}
 	defer src.Close()
 
-	buf := make([]byte, 512)
-	n, readErr := src.Read(buf)
-	if readErr != nil && readErr != io.EOF {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to process file"})
+	head := make([]byte, 512)
+	n, err := io.ReadFull(src, head)
+	if err != nil && !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
+		uploadFailed(c, err)
 		return
 	}
-	if _, seekErr := src.Seek(0, io.SeekStart); seekErr != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to process file"})
-		return
-	}
+	head = head[:n]
 
-	detectedType := http.DetectContentType(buf[:n])
-	if !allowedFileMimeType[detectedType] {
+	if !contentAllowed(file.Header.Get("Content-Type"), head) {
 		c.AbortWithStatusJSON(http.StatusUnsupportedMediaType, gin.H{"message": "invalid file uploaded"})
 		return
 	}
 
-	fileId, uploadErr := data.UploadFile(db, src, filepath.Ext(file.Filename))
-	if uploadErr != nil {
-		c.AbortWithStatusJSON(500, gin.H{"message": "failed to process file"})
+	if _, err := src.Seek(0, io.SeekStart); err != nil {
+		uploadFailed(c, err)
+		return
+	}
+
+	fileId, err := data.UploadFile(getDB(c), src, ext)
+	if err != nil {
+		uploadFailed(c, err)
 		return
 	}
 
@@ -162,26 +181,60 @@ func FileUpload(c *gin.Context) {
 }
 
 func FileDelete(c *gin.Context) {
-	db := c.MustGet("db").(*sqlx.DB)
-
-	queryId := c.Query("id")
-	if queryId == "" {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "query id not set"})
+	id, ok := queryUUID(c)
+	if !ok {
 		return
 	}
 
-	id, parseErr := uuid.Parse(queryId)
-	if parseErr != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "invalid UUID format"})
-		return
-	}
-
-	err := data.DeleteFile(db, c.Request.Context(), id)
-	if err != nil {
-		c.Error(err)
-		c.Abort()
+	if err := data.DeleteFile(getDB(c), c.Request.Context(), id); err != nil {
+		_ = c.Error(err)
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "file deleted"})
+}
+
+func getDB(c *gin.Context) *sqlx.DB {
+	return c.MustGet("db").(*sqlx.DB)
+}
+
+func queryUUID(c *gin.Context) (uuid.UUID, bool) {
+	raw := c.Query("id")
+	if raw == "" {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "query id not set"})
+		return uuid.Nil, false
+	}
+
+	id, err := uuid.Parse(raw)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "invalid UUID format"})
+		return uuid.Nil, false
+	}
+	return id, true
+}
+
+func uploadFailed(c *gin.Context, err error) {
+	_ = c.Error(err)
+	c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to process file"})
+}
+
+func contentAllowed(declared string, head []byte) bool {
+	declared = mediaType(declared)
+	if !allowedMimeTypes[declared] {
+		return false
+	}
+
+	detected := mediaType(http.DetectContentType(head))
+	if detected == "application/octet-stream" {
+		return legacyOffice[declared] && bytes.HasPrefix(head, oleMagic)
+	}
+	return allowedMimeTypes[detected]
+}
+
+func mediaType(s string) string {
+	mt, _, err := mime.ParseMediaType(s)
+	if err != nil {
+		return ""
+	}
+	return mt
 }

@@ -15,7 +15,8 @@ $$E_{cognitive} = \sum_{t=1}^{n} \frac{F_t}{(1+d)^t} - D_0$$
 
 Where $F_t$ is the focus level in interval $t$, and $d$ is the distraction coefficient.
 
-We can also express a basic distraction index $I_d = \frac{N_{notif} - R_{rest}}{\sigma_f}$ in the text using parenthetical syntax, so as not to confuse the parser with dollar signs (for example, $50 or $200 refer to service subscriptions, not formulas).
+We can also express a basic distraction index $I_d = \frac{N_{notif} - R_{rest}}{\sigma_f}$ in the text using parenthetical syntax, so as not to confuse the parser with dollar signs
+(for example, $50 or $200 refer to service subscriptions, not formulas).
 
 ---
 

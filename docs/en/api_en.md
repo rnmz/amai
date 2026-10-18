@@ -52,7 +52,7 @@ Fetch a single post by ID.
 
 | Name | Type | Required | Description        |
 |------|------|----------|---------------------|
-| `id` | UUID | Yes      | Post identifier      |
+| `id` | UUID | Yes      | Articles identifier      |
 
 **Responses**
 
@@ -60,11 +60,11 @@ Fetch a single post by ID.
   ```json
   {
     "id": "e2e5a1b0-...",
-    "title": "Post title",
+    "title": "Articles title",
     "poster_id": "author-id",
     "created_at": "2026-01-01T12:00:00Z",
     "updated_at": "2026-01-02T09:00:00Z",
-    "body": "Post content..."
+    "body": "Articles content..."
   }
   ```
   `updated_at` is `null` if the post has never been edited (created == updated timestamp).
@@ -90,7 +90,7 @@ Fetch a paginated list of posts.
 - `200 OK`
   ```json
   {
-    "posts": [ /* array of Post objects, same shape as GET /post/get */ ],
+    "posts": [ /* array of Articles objects, same shape as GET /post/get */ ],
     "pages": 5
   }
   ```
@@ -179,9 +179,9 @@ Create a new post.
 **Request Body**
 ```json
 {
-  "title": "Post title",
+  "title": "Articles title",
   "poster_id": "author-id",
-  "body": "Post content..."
+  "body": "Articles content..."
 }
 ```
 
@@ -227,7 +227,7 @@ Delete a post by ID.
 
 | Name | Type | Required | Description        |
 |------|------|----------|---------------------|
-| `id` | UUID | Yes      | Post identifier      |
+| `id` | UUID | Yes      | Articles identifier      |
 
 **Responses**
 

@@ -366,7 +366,7 @@ const katexDollarExtension = {
     return src.match(/\$[^\d\s]/)?.index
   },
   tokenizer(src: string) {
-    const rule = /^\$([^\$\n]+?)\$/
+    const rule = /^\$([^$\n]+?)\$/
     const match = rule.exec(src)
     const text = match?.[1]
     if (match && text && !/^\d/.test(text)) {

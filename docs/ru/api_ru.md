@@ -86,7 +86,7 @@
 * `200 OK`
 ```json
 {
-  "posts": [ /* массив объектов Post, аналогично GET /post/get */ ],
+  "posts": [ /* массив объектов Articles, аналогично GET /post/get */ ],
   "pages": 5
 }
 
