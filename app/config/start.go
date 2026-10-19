@@ -133,13 +133,13 @@ func StartServer() {
 	}
 	defer CloseDatabase(db)
 
-	r, err := GinApp(db)
+	r, err := GinApp()
 	if err != nil {
 		slog.Error("[StartServer] init gin", "error", err)
 		return
 	}
 
-	Routing(r)
+	Routing(db, r)
 
 	srv := &http.Server{
 		Addr:    ":" + os.Getenv("BACKEND_PORT"),

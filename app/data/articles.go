@@ -9,8 +9,6 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-const articleColumns = "id, title, poster, created, updated, body"
-
 type ArticleEntity struct {
 	Id      uuid.UUID `db:"id"`
 	Title   string    `db:"title"`
@@ -33,7 +31,7 @@ func GetAllArticles(db *sqlx.DB, ctx context.Context, page int) ([]ArticleEntity
 	offset := (page - 1) * pageSize
 
 	err := db.SelectContext(ctx, &articles,
-		"SELECT "+articleColumns+" FROM articles ORDER BY created DESC, id LIMIT $1 OFFSET $2",
+		"SELECT id, title, poster, created, updated FROM articles ORDER BY created DESC, id LIMIT $1 OFFSET $2",
 		pageSize, offset,
 	)
 	if err != nil {
@@ -45,7 +43,7 @@ func GetAllArticles(db *sqlx.DB, ctx context.Context, page int) ([]ArticleEntity
 func GetArticleById(db *sqlx.DB, ctx context.Context, id uuid.UUID) (ArticleEntity, error) {
 	var article ArticleEntity
 	err := db.GetContext(ctx, &article,
-		"SELECT "+articleColumns+" FROM articles WHERE id = $1", id.String())
+		"SELECT * FROM articles WHERE id = $1", id.String())
 	if err != nil {
 		return ArticleEntity{}, fmt.Errorf("get article %s: %w", id, err)
 	}

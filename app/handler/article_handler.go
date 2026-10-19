@@ -37,8 +37,12 @@ func parseRawArticle(articleEntity data.ArticleEntity) ArticleJSON {
 	return result
 }
 
-func ArticleGetById(c *gin.Context) {
-	db := c.MustGet("db").(*sqlx.DB)
+type ArticleHandler struct {
+	DB *sqlx.DB
+}
+
+func (a *ArticleHandler) ArticleGetById(c *gin.Context) {
+	db := a.DB
 
 	queryId := c.Query("id")
 	if queryId == "" {
@@ -62,8 +66,8 @@ func ArticleGetById(c *gin.Context) {
 	c.JSON(http.StatusOK, post)
 }
 
-func ArticleGetAll(c *gin.Context) {
-	db := c.MustGet("db").(*sqlx.DB)
+func (a *ArticleHandler) ArticleGetAll(c *gin.Context) {
+	db := a.DB
 
 	pageQuery := c.Query("page")
 	if pageQuery == "" {
@@ -106,8 +110,8 @@ func ArticleGetAll(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"articles": articleJSONS, "pages": pages})
 }
 
-func ArticleCreate(c *gin.Context) {
-	db := c.MustGet("db").(*sqlx.DB)
+func (a *ArticleHandler) ArticleCreate(c *gin.Context) {
+	db := a.DB
 	var articleJSON ArticleJSON
 
 	if err := c.ShouldBindJSON(&articleJSON); err != nil {
@@ -128,8 +132,8 @@ func ArticleCreate(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "created"})
 }
 
-func ArticleEdit(c *gin.Context) {
-	db := c.MustGet("db").(*sqlx.DB)
+func (a *ArticleHandler) ArticleEdit(c *gin.Context) {
+	db := a.DB
 	var articleJSON ArticleJSON
 
 	if err := c.ShouldBindJSON(&articleJSON); err != nil {
@@ -155,8 +159,8 @@ func ArticleEdit(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "post edited"})
 }
 
-func ArticleDelete(c *gin.Context) {
-	db := c.MustGet("db").(*sqlx.DB)
+func (a *ArticleHandler) ArticleDelete(c *gin.Context) {
+	db := a.DB
 
 	queryId := c.Query("id")
 	if queryId == "" {

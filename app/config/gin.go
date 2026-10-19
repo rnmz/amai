@@ -12,11 +12,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jmoiron/sqlx"
 	"golang.org/x/time/rate"
 )
 
-func GinApp(db *sqlx.DB) (*gin.Engine, error) {
+func GinApp() (*gin.Engine, error) {
 	switch mode := os.Getenv("GIN_MODE"); mode {
 	case gin.ReleaseMode, gin.DebugMode:
 		gin.SetMode(mode)
@@ -37,7 +36,6 @@ func GinApp(db *sqlx.DB) (*gin.Engine, error) {
 		cors(os.Getenv("TRUSTED_DOMAIN")),
 		rateLimit(30, 30),
 		errorHandler(),
-		injectSqlx(db),
 	)
 
 	return router, nil
@@ -85,15 +83,6 @@ func errorHandler() gin.HandlerFunc {
 		if !c.Writer.Written() {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
 		}
-	}
-}
-
-// todo: inject into StartServer, not into GinApp
-
-func injectSqlx(db *sqlx.DB) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Set("db", db)
-		c.Next()
 	}
 }
 
