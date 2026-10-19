@@ -5,14 +5,17 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jmoiron/sqlx"
 )
 
-func Routing(e *gin.Engine) {
+func Routing(db *sqlx.DB, e *gin.Engine) {
+	fHandler := handler.FileHandler{DB: db}
+	aHandler := handler.ArticleHandler{DB: db}
 	user := e.Group("/")
 	{
-		user.GET("/article/get", handler.ArticleGetById)
-		user.GET("/article/all", handler.ArticleGetAll)
-		user.GET("/file/get", handler.FileGet)
+		user.GET("/article/get", aHandler.ArticleGetById)
+		user.GET("/article/all", aHandler.ArticleGetAll)
+		user.GET("/file/get", fHandler.FileGet)
 
 		user.POST("/auth/login", authRateLimit(), handler.AuthLogin)
 		user.POST("/auth/logout", handler.AuthLogout)
@@ -23,13 +26,13 @@ func Routing(e *gin.Engine) {
 	admin := e.Group("/admin/")
 	admin.Use(authMiddleware())
 	{
-		admin.POST("/article/create", handler.ArticleCreate)
-		admin.PUT("/article/edit", handler.ArticleEdit)
-		admin.DELETE("/article/delete", handler.ArticleDelete)
+		admin.POST("/article/create", aHandler.ArticleCreate)
+		admin.PUT("/article/edit", aHandler.ArticleEdit)
+		admin.DELETE("/article/delete", aHandler.ArticleDelete)
 
-		admin.GET("/file/list", handler.GetFilesList)
-		admin.POST("/file/upload", handler.FileUpload)
-		admin.DELETE("/file/delete", handler.FileDelete)
+		admin.GET("/file/list", fHandler.GetFilesList)
+		admin.POST("/file/upload", fHandler.FileUpload)
+		admin.DELETE("/file/delete", fHandler.FileDelete)
 		admin.GET("/whoami", func(ctx *gin.Context) { ctx.JSON(http.StatusOK, gin.H{"authenticated": true}) })
 	}
 }

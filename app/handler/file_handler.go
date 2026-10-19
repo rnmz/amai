@@ -63,13 +63,17 @@ func parseRawFiles(file data.FileEntity) FileJSON {
 	}
 }
 
-func FileGet(c *gin.Context) {
+type FileHandler struct {
+	DB *sqlx.DB
+}
+
+func (f *FileHandler) FileGet(c *gin.Context) {
 	id, ok := queryUUID(c)
 	if !ok {
 		return
 	}
 
-	filePath, err := data.GetFileById(getDB(c), c.Request.Context(), id)
+	filePath, err := data.GetFileById(f.DB, c.Request.Context(), id)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -79,8 +83,8 @@ func FileGet(c *gin.Context) {
 	c.File(filePath)
 }
 
-func GetFilesList(c *gin.Context) {
-	db := getDB(c)
+func (f *FileHandler) GetFilesList(c *gin.Context) {
+	db := f.DB
 	ctx := c.Request.Context()
 
 	pageQuery := c.Query("page")
@@ -123,7 +127,7 @@ func GetFilesList(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"files": files, "pages": pages})
 }
 
-func FileUpload(c *gin.Context) {
+func (f *FileHandler) FileUpload(c *gin.Context) {
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxUploadSize)
 
 	file, err := c.FormFile("file")
@@ -171,7 +175,7 @@ func FileUpload(c *gin.Context) {
 		return
 	}
 
-	fileId, err := data.UploadFile(getDB(c), src, ext)
+	fileId, err := data.UploadFile(f.DB, src, ext)
 	if err != nil {
 		uploadFailed(c, err)
 		return
@@ -180,22 +184,18 @@ func FileUpload(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "file uploaded.", "file_id": fileId})
 }
 
-func FileDelete(c *gin.Context) {
+func (f *FileHandler) FileDelete(c *gin.Context) {
 	id, ok := queryUUID(c)
 	if !ok {
 		return
 	}
 
-	if err := data.DeleteFile(getDB(c), c.Request.Context(), id); err != nil {
+	if err := data.DeleteFile(f.DB, c.Request.Context(), id); err != nil {
 		_ = c.Error(err)
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "file deleted"})
-}
-
-func getDB(c *gin.Context) *sqlx.DB {
-	return c.MustGet("db").(*sqlx.DB)
 }
 
 func queryUUID(c *gin.Context) (uuid.UUID, bool) {
